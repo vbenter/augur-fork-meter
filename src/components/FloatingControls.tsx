@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '../lib/utils';
 import type { FloatingControlsProps } from '../types/gauge';
 
 export const FloatingControls: React.FC<FloatingControlsProps> = ({
@@ -15,9 +16,10 @@ export const FloatingControls: React.FC<FloatingControlsProps> = ({
 
   return (
     <div className="fixed bottom-5 right-5 z-[1000]">
-      <div className={`bg-gray-900/95 rounded-xl p-5 backdrop-blur border border-primary/30 flex flex-col gap-4 min-w-[250px] transition-transform duration-300 ease-in-out ${
-        isPanelExpanded ? 'translate-x-0' : 'translate-x-[calc(100%+20px)]'
-      }`}>
+      <div className={cn(
+        "bg-gray-900/95 rounded-xl p-5 backdrop-blur border border-primary/30 flex flex-col gap-4 min-w-[250px] transition-transform duration-300 ease-in-out",
+        isPanelExpanded ? "translate-x-0" : "translate-x-[calc(100%+20px)]"
+      )}>
         <div className="flex items-center gap-2.5">
           <label htmlFor="percentageSlider" className="text-sm min-w-[60px] font-light tracking-[0.1em] uppercase text-primary">MANUAL:</label>
           <input 

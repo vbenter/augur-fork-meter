@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "throbbing-water-b2af",
+	"name": "augur-fork-meter",
 	"main": "./dist/_worker.js/index.js",
 	"compatibility_date": "2025-08-20",
 	"compatibility_flags": [

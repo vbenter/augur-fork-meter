@@ -1,5 +1,5 @@
 {
-	"name": "throbbing-water-b2af",
+	"name": "augur-fork-meter",
 	"type": "module",
 	"version": "0.0.1",
 	"scripts": {
@@ -17,8 +17,10 @@
 		"@types/react": "^19.1.10",
 		"@types/react-dom": "^19.1.7",
 		"astro": "^5.13.2",
+		"clsx": "^2.1.1",
 		"react": "^19.1.1",
 		"react-dom": "^19.1.1",
+		"tailwind-merge": "^3.3.1",
 		"tailwindcss": "^4.1.12"
 	},
 	"devDependencies": {

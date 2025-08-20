@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '../lib/utils';
 
 interface RiskBadgeProps {
   level: 'Low' | 'Medium' | 'High';
@@ -10,11 +11,11 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({ level }) => {
     
     switch (level) {
       case 'Low':
-        return `${baseStyles} bg-[color:var(--gauge-color-safe)]/20 text-[color:var(--gauge-color-safe)] border border-[color:var(--gauge-color-safe)]`;
+        return cn(baseStyles, "bg-[color:var(--gauge-color-safe)]/20 text-[color:var(--gauge-color-safe)] border border-[color:var(--gauge-color-safe)]");
       case 'Medium':
-        return `${baseStyles} bg-[color:var(--gauge-color-warning)]/20 text-[color:var(--gauge-color-warning)] border border-[color:var(--gauge-color-warning)]`;
+        return cn(baseStyles, "bg-[color:var(--gauge-color-warning)]/20 text-[color:var(--gauge-color-warning)] border border-[color:var(--gauge-color-warning)]");
       case 'High':
-        return `${baseStyles} bg-[color:var(--gauge-color-critical)]/20 text-[color:var(--gauge-color-critical)] border border-[color:var(--gauge-color-critical)]`;
+        return cn(baseStyles, "bg-[color:var(--gauge-color-critical)]/20 text-[color:var(--gauge-color-critical)] border border-[color:var(--gauge-color-critical)]");
       default:
         return baseStyles;
     }

@@ -2,7 +2,6 @@ export interface GaugeData {
   percentage: number;
   repStaked: number;
   activeDisputes: number;
-  totalRep: number;
 }
 
 export interface RiskLevel {
@@ -18,8 +17,6 @@ export interface DataPanelsProps {
   riskLevel: RiskLevel;
   repStaked: number;
   activeDisputes: number;
-  totalRep: number;
-  lastUpdated: string;
 }
 
 export interface FloatingControlsProps {

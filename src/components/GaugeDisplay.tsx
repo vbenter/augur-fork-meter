@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '../lib/utils';
 import type { GaugeDisplayProps } from '../types/gauge';
 
 export const GaugeDisplay: React.FC<GaugeDisplayProps> = ({ percentage }) => {
@@ -28,7 +29,7 @@ export const GaugeDisplay: React.FC<GaugeDisplayProps> = ({ percentage }) => {
   };
 
   return (
-    <div className="relative mb-10 flex flex-col items-center">
+    <div className={cn("relative mb-10 flex flex-col items-center")}>
       <svg className="w-[350px] h-[200px] max-w-full" viewBox="60 60 280 160">
         <defs>
           <linearGradient id="pathGradient" x1="80" y1="200" x2="320" y2="200" gradientUnits="userSpaceOnUse">

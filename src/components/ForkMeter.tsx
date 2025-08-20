@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { cn } from '../lib/utils';
 import { GaugeDisplay } from './GaugeDisplay';
 import { DataPanels } from './DataPanels';
 import { FloatingControls } from './FloatingControls';
@@ -9,8 +10,7 @@ export const ForkMeter: React.FC = () => {
   const [gaugeData, setGaugeData] = useState<GaugeData>({
     percentage: 0,
     repStaked: 0,
-    activeDisputes: 0,
-    totalRep: 11000000
+    activeDisputes: 0
   });
   const [isPanelExpanded, setIsPanelExpanded] = useState<boolean>(false);
   const [lastUpdated, setLastUpdated] = useState<string>('Never');
@@ -54,8 +54,7 @@ export const ForkMeter: React.FC = () => {
     return {
       percentage: selectedScenario.percentage,
       repStaked: selectedScenario.repStaked,
-      activeDisputes: selectedScenario.activeDisputes,
-      totalRep: 11000000
+      activeDisputes: selectedScenario.activeDisputes
     };
   }, []);
 
@@ -78,8 +77,7 @@ export const ForkMeter: React.FC = () => {
     return {
       percentage,
       repStaked,
-      activeDisputes,
-      totalRep: 11000000
+      activeDisputes
     };
   }, []);
 
@@ -98,14 +96,14 @@ export const ForkMeter: React.FC = () => {
     setCurrentValue(clampedPercentage);
     const newData = updateDataForPercentage(clampedPercentage);
     setGaugeData(newData);
-    setLastUpdated(new Date().toLocaleTimeString());
+    setLastUpdated(new Date().toLocaleString());
   }, [updateDataForPercentage]);
 
   const handleRandomClick = useCallback(() => {
     const newData = generateFakeData();
     setCurrentValue(newData.percentage);
     setGaugeData(newData);
-    setLastUpdated(new Date().toLocaleTimeString());
+    setLastUpdated(new Date().toLocaleString());
   }, [generateFakeData]);
 
   const handleTogglePanel = useCallback(() => {
@@ -115,7 +113,7 @@ export const ForkMeter: React.FC = () => {
   const riskLevel = getRiskLevel(gaugeData.percentage);
 
   return (
-    <div className="max-w-4xl w-full text-center">
+    <div className={cn("max-w-4xl w-full text-center")}>
       <h1 className="text-5xl mb-4 font-light tracking-[0.1em] text-white">AUGUR FORK METER</h1>
       <p className="text-lg mb-10 font-light tracking-[0.08em] uppercase text-primary">Real-time monitoring of fork probability</p>
       
@@ -125,8 +123,6 @@ export const ForkMeter: React.FC = () => {
         riskLevel={riskLevel}
         repStaked={gaugeData.repStaked}
         activeDisputes={gaugeData.activeDisputes}
-        totalRep={gaugeData.totalRep}
-        lastUpdated={lastUpdated}
       />
       
       <div className="mt-8 text-sm font-light tracking-[0.05em] uppercase text-primary">
