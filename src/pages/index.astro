@@ -1,0 +1,21 @@
+---
+import { ForkMeter } from '../components/ForkMeter';
+import '../styles/global.css';
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Augur Fork Pressure Gauge</title>
+		<meta name="description" content="Real-time monitoring of Augur fork probability based on REP staking and dispute activity" />
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Handjet:wght@300;400&display=swap" rel="stylesheet">
+	</head>
+	<body>
+		<ForkMeter client:load />
+	</body>
+</html>
