@@ -1,0 +1,40 @@
+{
+  "timestamp": "2025-08-21T19:13:10.898Z",
+  "blockNumber": 12345678,
+  "riskLevel": "low",
+  "riskPercentage": 20,
+  "metrics": {
+    "largestDisputeBond": 1500,
+    "forkThresholdPercent": 0.55,
+    "repMarketCap": 165000000,
+    "openInterest": 50000000,
+    "securityRatio": 3.3,
+    "activeDisputes": 2,
+    "disputeDetails": [
+      {
+        "marketId": "0xabc123...",
+        "title": "Will Bitcoin reach $100k by end of 2024?",
+        "disputeBondSize": 1500,
+        "disputeRound": 2,
+        "daysRemaining": 4
+      },
+      {
+        "marketId": "0xdef456...",
+        "title": "US Presidential Election 2024 Winner",
+        "disputeBondSize": 850,
+        "disputeRound": 1,
+        "daysRemaining": 6
+      }
+    ]
+  },
+  "nextUpdate": "2025-08-21T20:13:10.898Z",
+  "calculation": {
+    "method": "GitHub Actions + Static JSON",
+    "forkThreshold": 275000,
+    "securityMultiplier": {
+      "current": 3.3,
+      "minimum": 3,
+      "target": 5
+    }
+  }
+}

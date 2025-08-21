@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '../lib/utils';
 
 interface RiskBadgeProps {
-  level: 'Low' | 'Medium' | 'High';
+  level: 'Low' | 'Medium' | 'High' | 'Critical';
 }
 
 export const RiskBadge: React.FC<RiskBadgeProps> = ({ level }) => {
@@ -14,6 +14,8 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({ level }) => {
         return "text-[color:var(--gauge-color-warning)]";
       case 'High':
         return "text-[color:var(--gauge-color-critical)]";
+      case 'Critical':
+        return "text-red-500 animate-pulse";
       default:
         return "text-white";
     }

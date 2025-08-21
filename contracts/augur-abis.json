@@ -1,0 +1,139 @@
+{
+  "universe": {
+    "address": "0x1f732847fbbcc46ffe859f28e916d993b2b08831",
+    "abi": [
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getOpenInterest",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getCurrentDisputeWindow",
+        "outputs": [{"name": "", "type": "address"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getDisputeRoundDurationInSeconds",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getRepMarketCapInAttotokens",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      }
+    ]
+  },
+  "repToken": {
+    "address": "0x1985365e9f78359a9B6AD760e32412f4a445E862",
+    "abi": [
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "totalSupply",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [{"name": "_owner", "type": "address"}],
+        "name": "balanceOf",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      }
+    ]
+  },
+  "disputeCrowdsourcer": {
+    "abi": [
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getSize",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getStake",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getMarket",
+        "outputs": [{"name": "", "type": "address"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getPayoutNumerators",
+        "outputs": [{"name": "", "type": "uint256[]"}],
+        "type": "function"
+      }
+    ]
+  },
+  "market": {
+    "abi": [
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getMarketCreatorSettlementFeeDivisor",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getNumTicks",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "isFinalized",
+        "outputs": [{"name": "", "type": "bool"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getDisputeWindow",
+        "outputs": [{"name": "", "type": "address"}],
+        "type": "function"
+      }
+    ]
+  },
+  "events": {
+    "DisputeCrowdsourcerCreated": {
+      "signature": "DisputeCrowdsourcerCreated(address,address,uint256[],uint256)",
+      "topics": ["0x..."]
+    },
+    "DisputeCrowdsourcerCompleted": {
+      "signature": "DisputeCrowdsourcerCompleted(address,address)",
+      "topics": ["0x..."]
+    },
+    "UniverseForked": {
+      "signature": "UniverseForked(address,address)",
+      "topics": ["0x..."]
+    }
+  },
+  "metadata": {
+    "network": "mainnet",
+    "description": "Augur v2 core contracts for fork risk monitoring",
+    "lastUpdated": "2024-01-21",
+    "forkThreshold": 275000,
+    "totalRepSupply": 11000000
+  }
+}
