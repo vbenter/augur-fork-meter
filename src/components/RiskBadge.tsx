@@ -6,23 +6,21 @@ interface RiskBadgeProps {
 }
 
 export const RiskBadge: React.FC<RiskBadgeProps> = ({ level }) => {
-  const getStyles = (level: string) => {
-    const baseStyles = "inline-block px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide";
-    
+  const getTextColor = (level: string) => {
     switch (level) {
       case 'Low':
-        return cn(baseStyles, "bg-[color:var(--gauge-color-safe)]/20 text-[color:var(--gauge-color-safe)] border border-[color:var(--gauge-color-safe)]");
+        return "text-[color:var(--gauge-color-safe)]";
       case 'Medium':
-        return cn(baseStyles, "bg-[color:var(--gauge-color-warning)]/20 text-[color:var(--gauge-color-warning)] border border-[color:var(--gauge-color-warning)]");
+        return "text-[color:var(--gauge-color-warning)]";
       case 'High':
-        return cn(baseStyles, "bg-[color:var(--gauge-color-critical)]/20 text-[color:var(--gauge-color-critical)] border border-[color:var(--gauge-color-critical)]");
+        return "text-[color:var(--gauge-color-critical)]";
       default:
-        return baseStyles;
+        return "text-white";
     }
   };
 
   return (
-    <span className={getStyles(level)}>
+    <span className={getTextColor(level)}>
       {level}
     </span>
   );

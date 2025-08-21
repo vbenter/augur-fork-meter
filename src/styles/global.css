@@ -2,6 +2,7 @@
 
 @theme {
   --color-primary: #00ff88;
+  --color-muted-primary: #008844;
 }
 
 :root {
@@ -10,7 +11,7 @@
   --gauge-color-warning: #ffff00;
   --gauge-color-danger: #ff8800;
   --gauge-color-critical: #ff0044;
-  --gauge-bg-color: rgba(0, 255, 136, 0.3);
+  --gauge-bg-color: oklch(from var(--color-muted-primary) l c h / 0.25);
   --gauge-thickness: 10;
 }
 

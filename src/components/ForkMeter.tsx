@@ -3,7 +3,7 @@ import { cn } from '../lib/utils';
 import { GaugeDisplay } from './GaugeDisplay';
 import { DataPanels } from './DataPanels';
 import { FloatingControls } from './FloatingControls';
-import type { GaugeData, RiskLevel, FakeDataScenario } from '../types/gauge';
+import type { GaugeData, RiskLevel } from '../types/gauge';
 
 export const ForkMeter: React.FC = () => {
   const [currentValue, setCurrentValue] = useState<number>(0);
@@ -15,47 +15,28 @@ export const ForkMeter: React.FC = () => {
   const [isPanelExpanded, setIsPanelExpanded] = useState<boolean>(false);
   const [lastUpdated, setLastUpdated] = useState<string>('Never');
 
-  const generateFakeData = useCallback((): GaugeData => {
-    // Simulate realistic fork probability scenarios
-    const scenarios: FakeDataScenario[] = [
-      // Low risk scenario
-      { 
-        percentage: Math.random() * 25,
-        repStaked: Math.floor(Math.random() * 50000) + 10000,
-        activeDisputes: Math.floor(Math.random() * 3) + 1
-      },
-      // Medium risk scenario
-      { 
-        percentage: 30 + Math.random() * 35,
-        repStaked: Math.floor(Math.random() * 150000) + 75000,
-        activeDisputes: Math.floor(Math.random() * 8) + 3
-      },
-      // High risk scenario
-      { 
-        percentage: 70 + Math.random() * 30,
-        repStaked: Math.floor(Math.random() * 300000) + 200000,
-        activeDisputes: Math.floor(Math.random() * 15) + 8
-      }
-    ];
+  const generateLowRiskData = useCallback((): GaugeData => {
+    const percentage = Math.random() * 25;
+    const repStaked = Math.floor(Math.random() * 50000) + 10000;
+    const activeDisputes = Math.floor(Math.random() * 3) + 1;
     
-    // Weighted selection favoring lower risk scenarios
-    const weights = [0.6, 0.3, 0.1];
-    const random = Math.random();
-    let selectedScenario: FakeDataScenario;
+    return { percentage, repStaked, activeDisputes };
+  }, []);
+
+  const generateMediumRiskData = useCallback((): GaugeData => {
+    const percentage = 30 + Math.random() * 35;
+    const repStaked = Math.floor(Math.random() * 150000) + 75000;
+    const activeDisputes = Math.floor(Math.random() * 8) + 3;
     
-    if (random < weights[0]) {
-      selectedScenario = scenarios[0];
-    } else if (random < weights[0] + weights[1]) {
-      selectedScenario = scenarios[1];
-    } else {
-      selectedScenario = scenarios[2];
-    }
+    return { percentage, repStaked, activeDisputes };
+  }, []);
+
+  const generateHighRiskData = useCallback((): GaugeData => {
+    const percentage = 70 + Math.random() * 30;
+    const repStaked = Math.floor(Math.random() * 300000) + 200000;
+    const activeDisputes = Math.floor(Math.random() * 15) + 8;
     
-    return {
-      percentage: selectedScenario.percentage,
-      repStaked: selectedScenario.repStaked,
-      activeDisputes: selectedScenario.activeDisputes
-    };
+    return { percentage, repStaked, activeDisputes };
   }, []);
 
   const updateDataForPercentage = useCallback((percentage: number): GaugeData => {
@@ -99,12 +80,26 @@ export const ForkMeter: React.FC = () => {
     setLastUpdated(new Date().toLocaleString());
   }, [updateDataForPercentage]);
 
-  const handleRandomClick = useCallback(() => {
-    const newData = generateFakeData();
+  const handleLowRiskClick = useCallback(() => {
+    const newData = generateLowRiskData();
     setCurrentValue(newData.percentage);
     setGaugeData(newData);
     setLastUpdated(new Date().toLocaleString());
-  }, [generateFakeData]);
+  }, [generateLowRiskData]);
+
+  const handleMediumRiskClick = useCallback(() => {
+    const newData = generateMediumRiskData();
+    setCurrentValue(newData.percentage);
+    setGaugeData(newData);
+    setLastUpdated(new Date().toLocaleString());
+  }, [generateMediumRiskData]);
+
+  const handleHighRiskClick = useCallback(() => {
+    const newData = generateHighRiskData();
+    setCurrentValue(newData.percentage);
+    setGaugeData(newData);
+    setLastUpdated(new Date().toLocaleString());
+  }, [generateHighRiskData]);
 
   const handleTogglePanel = useCallback(() => {
     setIsPanelExpanded(prev => !prev);
@@ -114,8 +109,8 @@ export const ForkMeter: React.FC = () => {
 
   return (
     <div className={cn("max-w-4xl w-full text-center")}>
-      <h1 className="text-5xl mb-4 font-light tracking-[0.1em] text-white">AUGUR FORK METER</h1>
-      <p className="text-lg mb-10 font-light tracking-[0.08em] uppercase text-primary">Real-time monitoring of fork probability</p>
+      <h1 className="text-5xl mb-2 font-light tracking-[0.1em] text-primary">AUGUR FORK METER</h1>
+      <p className="text-lg mb-10 font-light tracking-[0.08em] uppercase text-muted-primary">Real-time monitoring of fork probability</p>
       
       <GaugeDisplay percentage={gaugeData.percentage} />
       
@@ -125,14 +120,16 @@ export const ForkMeter: React.FC = () => {
         activeDisputes={gaugeData.activeDisputes}
       />
       
-      <div className="mt-8 text-sm font-light tracking-[0.05em] uppercase text-primary">
-        Last updated: <span className="text-white">{lastUpdated}</span>
+      <div className="mt-8 text-sm font-light tracking-[0.05em] uppercase text-muted-primary">
+        Last updated: <span className="text-primary">{lastUpdated}</span>
       </div>
       
       <FloatingControls 
         percentage={currentValue}
         onSliderChange={handleSliderChange}
-        onRandomClick={handleRandomClick}
+        onLowRiskClick={handleLowRiskClick}
+        onMediumRiskClick={handleMediumRiskClick}
+        onHighRiskClick={handleHighRiskClick}
         isPanelExpanded={isPanelExpanded}
         onTogglePanel={handleTogglePanel}
       />

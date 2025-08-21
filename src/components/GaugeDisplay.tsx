@@ -29,8 +29,8 @@ export const GaugeDisplay: React.FC<GaugeDisplayProps> = ({ percentage }) => {
   };
 
   return (
-    <div className={cn("relative mb-10 flex flex-col items-center")}>
-      <svg className="w-[350px] h-[200px] max-w-full" viewBox="60 60 280 160">
+    <div className={cn("relative mb-10 flex flex-col gap-y-1 items-center")}>
+      <svg className="max-w-[200px] w-full" viewBox="60 60 280 160">
         <defs>
           <linearGradient id="pathGradient" x1="80" y1="200" x2="320" y2="200" gradientUnits="userSpaceOnUse">
             <stop offset="0%" style={{ stopColor: 'var(--gauge-color-safe)' }} />
@@ -39,6 +39,15 @@ export const GaugeDisplay: React.FC<GaugeDisplayProps> = ({ percentage }) => {
             <stop offset="80%" style={{ stopColor: 'var(--gauge-color-danger)' }} />
             <stop offset="100%" style={{ stopColor: 'var(--gauge-color-critical)' }} />
           </linearGradient>
+          
+          <filter id="glow" x="-200%" y="-200%" width="500%" height="500%">
+            <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+            <feColorMatrix in="coloredBlur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 3 0"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
         </defs>
         
         {/* Background track */}
@@ -50,29 +59,30 @@ export const GaugeDisplay: React.FC<GaugeDisplayProps> = ({ percentage }) => {
           strokeLinecap="round"
         />
         
-        {/* Dynamic colored arc based on percentage */}
+        {/* Dynamic colored arc with CSS glow */}
         <path 
           d={updateArc(percentage)}
           fill="none" 
           stroke="url(#pathGradient)" 
           strokeWidth="var(--gauge-thickness)" 
           strokeLinecap="round"
+          style={{ filter: 'drop-shadow(0 0 0.5em oklch(from var(--color-primary) l c h / 0.5))' }}
         />
         
-        {/* Percentage at baseline of arc */}
+        {/* Percentage value at baseline of arc */}
         <text 
           x="200" 
           y="195" 
           textAnchor="middle" 
-          fill="#ffffff" 
-          fontSize="48" 
+          fill="var(--color-primary)" 
+          fontSize="4.25em" 
           fontWeight="bold"
         >
           {formatPercentage(percentage)}
         </text>
       </svg>
       
-      <div className="text-xl mt-4 uppercase tracking-[0.2em] font-light text-primary">FORK PRESSURE</div>
+      <div className="text-xl uppercase tracking-[0.2em] font-light text-muted-primary">FORK PRESSURE</div>
     </div>
   );
 };

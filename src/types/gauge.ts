@@ -22,7 +22,9 @@ export interface DataPanelsProps {
 export interface FloatingControlsProps {
   percentage: number;
   onSliderChange: (percentage: number) => void;
-  onRandomClick: () => void;
+  onLowRiskClick: () => void;
+  onMediumRiskClick: () => void;
+  onHighRiskClick: () => void;
   isPanelExpanded: boolean;
   onTogglePanel: () => void;
 }
