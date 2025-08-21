@@ -10,13 +10,13 @@ A transparent, auditable monitoring system for Augur's fork probability. Provide
 - **No Private Infrastructure**: Uses only GitHub Actions and static JSON storage
 - **Interactive UI**: Gauge display with both real data and demo modes
 
-## Quick Start
+## Quick Start - No API Keys Required!
 
 ```bash
 # Install dependencies
 npm install
 
-# Calculate current fork risk (generates data/fork-risk.json)
+# Calculate current fork risk (uses public RPCs automatically!)
 npm run calculate-fork-risk
 
 # Copy data to public directory for web access
@@ -29,11 +29,14 @@ npm run dev
 npm run build
 ```
 
+**✅ Zero Configuration**: The system automatically connects to public Ethereum RPC endpoints - no API keys, no registration, no setup required!
+
 ## Architecture
 
 ### Data Collection
 - **GitHub Actions**: Runs hourly to calculate fork risk metrics
-- **Ethereum Integration**: Queries Augur contracts via JSON-RPC
+- **Public RPC Endpoints**: Connects to free Ethereum RPC services (no API keys!)
+- **Verified Contracts**: Uses official Augur v2 mainnet addresses
 - **Static Storage**: Results saved to `data/fork-risk.json`
 - **Git Audit Trail**: All changes tracked in version control
 
@@ -64,12 +67,28 @@ npm run build
 | **High** | Large disputes | 2-5% | Concern |
 | **Critical** | Fork imminent | >5% | Alert |
 
-## Configuration
+## Public RPC Endpoints (No API Keys!)
 
-### Environment Variables
+The system automatically connects to these free, public Ethereum RPC endpoints:
+
+| Provider | Endpoint | Notes |
+|----------|----------|-------|
+| **Ankr** | `https://rpc.ankr.com/eth` | Primary endpoint |
+| **LlamaRPC** | `https://eth.llamarpc.com` | Public good project |
+| **LinkPool** | `https://main-light.eth.linkpool.io` | Community provider |
+| **PublicNode** | `https://ethereum.publicnode.com` | Decentralized infrastructure |
+| **1RPC** | `https://1rpc.io/eth` | Privacy-focused RPC |
+
+### Failover Strategy
+- Automatically tries endpoints in order until one works
+- Logs which endpoint is used for transparency
+- No rate limiting issues with hourly GitHub Actions
+- Zero vendor lock-in - can always switch providers
+
+### Optional Custom RPC
 ```bash
-# Required for live data (optional - uses mock data if not provided)
-ETH_RPC_URL=https://mainnet.infura.io/v3/YOUR-PROJECT-ID
+# Optional: Use your own RPC endpoint
+ETH_RPC_URL=https://your-custom-rpc-endpoint.com
 ```
 
 ### GitHub Actions Setup
@@ -98,11 +117,14 @@ The monitoring system automatically runs via GitHub Actions. See `.github/workfl
 
 ### Running Calculations Manually
 ```bash
-# With real Ethereum RPC (requires ETH_RPC_URL)
-ETH_RPC_URL="https://mainnet.infura.io/v3/YOUR-KEY" npm run calculate-fork-risk
-
-# With mock data (for testing)
+# Uses public RPCs automatically (no API key needed!)
 npm run calculate-fork-risk
+
+# Or with a custom RPC endpoint
+ETH_RPC_URL="https://your-rpc-endpoint.com" npm run calculate-fork-risk
+
+# Check which RPC was used
+cat data/fork-risk.json | grep -A 5 "rpcInfo"
 ```
 
 ## Transparency and Auditability
@@ -126,9 +148,23 @@ This project prioritizes transparency:
 
 MIT License - see LICENSE file for details.
 
+## Current Status & Limitations
+
+**✅ What's Working:**
+- Real Augur v2 contract addresses and connections
+- Public RPC failover system (no API keys needed)
+- Transparent, auditable architecture
+- Proper error handling (no fake data fallbacks)
+
+**⚠️ Current Limitations:**
+- Dispute monitoring uses mock data (real event parsing in development)
+- REP price estimation ($15/REP placeholder - price oracle needed)
+- Open interest estimates (Universe contract integration pending)
+- Limited Augur activity on mainnet (most moved to Polygon)
+
 ## Disclaimer
 
-This tool is for informational purposes only. Fork risk assessment is inherently uncertain and this system may not capture all possible risk factors. Users should conduct their own analysis and not rely solely on these metrics for critical decisions.
+This tool is for informational purposes only. Fork risk assessment is inherently uncertain and this system may not capture all possible risk factors. The current implementation has known limitations documented above. Users should conduct their own analysis and not rely solely on these metrics for critical decisions.
 
 ## 🧞 Commands
 

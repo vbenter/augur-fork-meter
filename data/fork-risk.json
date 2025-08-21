@@ -1,14 +1,14 @@
 {
-  "timestamp": "2025-08-21T19:13:10.898Z",
-  "blockNumber": 12345678,
+  "timestamp": "2025-08-21T21:35:54.813Z",
+  "blockNumber": 23192174,
   "riskLevel": "low",
-  "riskPercentage": 20,
+  "riskPercentage": 29,
   "metrics": {
     "largestDisputeBond": 1500,
     "forkThresholdPercent": 0.55,
-    "repMarketCap": 165000000,
+    "repMarketCap": 120947522.57659815,
     "openInterest": 50000000,
-    "securityRatio": 3.3,
+    "securityRatio": 2.42,
     "activeDisputes": 2,
     "disputeDetails": [
       {
@@ -27,12 +27,18 @@
       }
     ]
   },
-  "nextUpdate": "2025-08-21T20:13:10.898Z",
+  "nextUpdate": "2025-08-21T22:35:55.227Z",
+  "rpcInfo": {
+    "endpoint": "https://eth.llamarpc.com",
+    "latency": 1069,
+    "fallbacksAttempted": 1,
+    "isPublicRpc": true
+  },
   "calculation": {
-    "method": "GitHub Actions + Static JSON",
+    "method": "GitHub Actions + Public RPC",
     "forkThreshold": 275000,
     "securityMultiplier": {
-      "current": 3.3,
+      "current": 2.418950451531963,
       "minimum": 3,
       "target": 5
     }

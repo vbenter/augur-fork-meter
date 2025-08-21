@@ -1,6 +1,6 @@
 {
   "universe": {
-    "address": "0x1f732847fbbcc46ffe859f28e916d993b2b08831",
+    "address": "0xe991247b78f937d7b69cfc00f1a487a293557677",
     "abi": [
       {
         "constant": true,
@@ -32,8 +32,46 @@
       }
     ]
   },
-  "repToken": {
-    "address": "0x1985365e9f78359a9B6AD760e32412f4a445E862",
+  "repV2Token": {
+    "address": "0x221657776846890989a759ba2973e427dff5c9bb",
+    "abi": [
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "totalSupply",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [{"name": "_owner", "type": "address"}],
+        "name": "balanceOf",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      }
+    ]
+  },
+  "augur": {
+    "address": "0x75228dce4d82566d93068a8d5d49435216551599",
+    "abi": [
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getTimestamp",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "isKnownUniverse",
+        "outputs": [{"name": "", "type": "bool"}],
+        "type": "function"
+      }
+    ]
+  },
+  "cash": {
+    "address": "0xd5524179cb7ae012f5b642c1d6d700bbaa76b96b",
     "abi": [
       {
         "constant": true,
@@ -131,9 +169,11 @@
   },
   "metadata": {
     "network": "mainnet",
-    "description": "Augur v2 core contracts for fork risk monitoring",
-    "lastUpdated": "2024-01-21",
+    "description": "Augur v2 core contracts for fork risk monitoring (verified addresses)",
+    "lastUpdated": "2025-08-21",
     "forkThreshold": 275000,
-    "totalRepSupply": 11000000
+    "totalRepSupply": 11000000,
+    "deploymentDate": "2020-07-28",
+    "note": "Addresses verified from official Augur v2 deployment on Ethereum mainnet"
   }
 }

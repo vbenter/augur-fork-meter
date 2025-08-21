@@ -36,7 +36,10 @@ jobs:
       
       - name: Calculate fork risk
         env:
+          # Optional: Custom RPC can be provided via secrets
+          # If not provided, will use public RPCs (no API key needed!)
           ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
+          USE_PUBLIC_RPC: true
         run: npm run calculate-fork-risk
       
       - name: Check for changes
@@ -87,6 +90,8 @@ jobs:
           THRESHOLD_PERCENT=$(cat data/fork-risk.json | grep -o '"forkThresholdPercent": [0-9.]*' | cut -d':' -f2 | tr -d ' ')
           SECURITY_RATIO=$(cat data/fork-risk.json | grep -o '"securityRatio": [0-9.]*' | cut -d':' -f2 | tr -d ' ')
           ACTIVE_DISPUTES=$(cat data/fork-risk.json | grep -o '"activeDisputes": [0-9]*' | cut -d':' -f2 | tr -d ' ')
+          RPC_ENDPOINT=$(cat data/fork-risk.json | grep -o '"endpoint": "[^"]*' | cut -d'"' -f4)
+          RPC_LATENCY=$(cat data/fork-risk.json | grep -o '"latency": [0-9]*' | cut -d':' -f2 | tr -d ' ')
           
           echo "**Risk Level:** ${RISK_LEVEL}" >> $GITHUB_STEP_SUMMARY
           echo "**Risk Percentage:** ${RISK_PERCENT}%" >> $GITHUB_STEP_SUMMARY
@@ -94,6 +99,7 @@ jobs:
           echo "**Fork Threshold Progress:** ${THRESHOLD_PERCENT}% of 275,000 REP" >> $GITHUB_STEP_SUMMARY
           echo "**Security Ratio:** ${SECURITY_RATIO}x (target: 5x, minimum: 3x)" >> $GITHUB_STEP_SUMMARY
           echo "**Active Disputes:** ${ACTIVE_DISPUTES}" >> $GITHUB_STEP_SUMMARY
+          echo "**RPC Used:** ${RPC_ENDPOINT} (${RPC_LATENCY}ms)" >> $GITHUB_STEP_SUMMARY
           
           if [[ "${{ steps.git-check.outputs.changes }}" == "true" ]]; then
             echo "✅ **Status:** Data updated and committed to repository" >> $GITHUB_STEP_SUMMARY

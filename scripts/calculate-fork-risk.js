@@ -25,6 +25,15 @@ const FORK_THRESHOLD_REP = 275000; // 2.5% of 11 million REP
 const MINIMUM_SECURITY_MULTIPLIER = 3;
 const TARGET_SECURITY_MULTIPLIER = 5;
 
+// Public RPC endpoints (no API keys required!)
+const PUBLIC_RPC_ENDPOINTS = [
+  'https://rpc.ankr.com/eth',           // Ankr public
+  'https://eth.llamarpc.com',           // LlamaRPC
+  'https://main-light.eth.linkpool.io', // LinkPool
+  'https://ethereum.publicnode.com',    // PublicNode
+  'https://1rpc.io/eth'                 // 1RPC
+];
+
 // Risk level thresholds (percentage of fork threshold)
 const RISK_LEVELS = {
   LOW: 0.5,      // <0.5% of fork threshold
@@ -37,62 +46,89 @@ class AugurForkCalculator {
   constructor() {
     this.provider = null;
     this.contracts = {};
+    this.rpcUsed = null;
+    this.rpcLatency = null;
+    this.fallbacksAttempted = 0;
+  }
+
+  async getWorkingProvider() {
+    // First try custom RPC if provided
+    const customRpc = process.env.ETH_RPC_URL;
+    if (customRpc && !customRpc.includes('YOUR-PROJECT-ID')) {
+      try {
+        console.log('Trying custom RPC:', customRpc);
+        const startTime = Date.now();
+        const provider = new ethers.JsonRpcProvider(customRpc);
+        await provider.getBlockNumber(); // Test connection
+        this.rpcLatency = Date.now() - startTime;
+        this.rpcUsed = customRpc;
+        console.log(`✓ Connected to custom RPC: ${customRpc} (${this.rpcLatency}ms)`);
+        return provider;
+      } catch (error) {
+        console.log(`✗ Custom RPC failed: ${error.message}`);
+        this.fallbacksAttempted++;
+      }
+    }
+
+    // Try public RPC endpoints
+    for (const rpc of PUBLIC_RPC_ENDPOINTS) {
+      try {
+        console.log(`Trying public RPC: ${rpc}`);
+        const startTime = Date.now();
+        const provider = new ethers.JsonRpcProvider(rpc);
+        await provider.getBlockNumber(); // Test connection
+        this.rpcLatency = Date.now() - startTime;
+        this.rpcUsed = rpc;
+        console.log(`✓ Connected to: ${rpc} (${this.rpcLatency}ms)`);
+        return provider;
+      } catch (error) {
+        console.log(`✗ Failed to connect to ${rpc}: ${error.message}`);
+        this.fallbacksAttempted++;
+      }
+    }
+    
+    throw new Error(`All RPC endpoints failed (attempted ${this.fallbacksAttempted})`);
   }
 
   async initialize() {
-    // For demo purposes, use mock data if no RPC URL is provided
-    const rpcUrl = process.env.ETH_RPC_URL;
-    
-    if (rpcUrl && rpcUrl !== 'https://mainnet.infura.io/v3/YOUR-PROJECT-ID') {
-      // Initialize real Ethereum provider
-      this.provider = new ethers.JsonRpcProvider(rpcUrl);
+    try {
+      console.log('Initializing Augur Fork Calculator...');
+      this.provider = await this.getWorkingProvider();
       await this.loadContracts();
-    } else {
-      // Use mock data for development/testing
-      console.log('No valid RPC URL provided, using mock data for testing');
-      this.createMockContracts();
+      console.log('✓ Successfully initialized with real blockchain connection');
+    } catch (error) {
+      console.error('✗ Failed to initialize blockchain connection:', error.message);
+      throw error; // Don't fall back to mock data - fail transparently
     }
   }
 
   async loadContracts() {
-    try {
-      const abiPath = path.join(__dirname, '../contracts/augur-abis.json');
-      const abiData = await fs.readFile(abiPath, 'utf8');
-      const abis = JSON.parse(abiData);
-      
-      // Initialize contract instances
-      this.contracts = {
-        universe: new ethers.Contract(abis.universe.address, abis.universe.abi, this.provider),
-        repToken: new ethers.Contract(abis.repToken.address, abis.repToken.abi, this.provider)
-      };
-    } catch (error) {
-      console.error('Error loading contracts:', error);
-      // For now, we'll create mock contracts for testing
-      this.createMockContracts();
-    }
+    const abiPath = path.join(__dirname, '../contracts/augur-abis.json');
+    const abiData = await fs.readFile(abiPath, 'utf8');
+    const abis = JSON.parse(abiData);
+    
+    // Initialize contract instances with correct names
+    this.contracts = {
+      universe: new ethers.Contract(abis.universe.address, abis.universe.abi, this.provider),
+      augur: new ethers.Contract(abis.augur.address, abis.augur.abi, this.provider),
+      repV2Token: new ethers.Contract(abis.repV2Token.address, abis.repV2Token.abi, this.provider),
+      cash: new ethers.Contract(abis.cash.address, abis.cash.abi, this.provider)
+    };
+    
+    console.log('✓ Loaded contracts:');
+    console.log(`  Universe: ${abis.universe.address}`);
+    console.log(`  Augur: ${abis.augur.address}`);
+    console.log(`  REPv2: ${abis.repV2Token.address}`);
+    console.log(`  Cash: ${abis.cash.address}`);
   }
 
-  createMockContracts() {
-    // Mock contracts for development/testing
-    console.log('Using mock contracts for testing');
-    this.contracts = {
-      universe: {
-        async getOpenInterest() { return ethers.parseEther('1000000'); }, // 1M DAI
-        async getCurrentDisputeWindow() { return '0x123...'; },
-        async getDisputeRoundDurationInSeconds() { return 604800; } // 7 days
-      },
-      repToken: {
-        async totalSupply() { return ethers.parseEther('11000000'); } // 11M REP
-      }
-    };
-  }
 
   async calculateForkRisk() {
     try {
       console.log('Starting fork risk calculation...');
       
       // Get current blockchain state
-      const blockNumber = this.provider ? await this.provider.getBlockNumber() : 12345678;
+      const blockNumber = await this.provider.getBlockNumber();
       const timestamp = new Date().toISOString();
       
       // Calculate key metrics
@@ -123,8 +159,14 @@ class AugurForkCalculator {
           disputeDetails: activeDisputes.slice(0, 5) // Top 5 disputes
         },
         nextUpdate: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour from now
+        rpcInfo: {
+          endpoint: this.rpcUsed,
+          latency: this.rpcLatency,
+          fallbacksAttempted: this.fallbacksAttempted,
+          isPublicRpc: PUBLIC_RPC_ENDPOINTS.includes(this.rpcUsed)
+        },
         calculation: {
-          method: 'GitHub Actions + Static JSON',
+          method: 'GitHub Actions + Public RPC',
           forkThreshold: FORK_THRESHOLD_REP,
           securityMultiplier: {
             current: securityRatio,
@@ -138,12 +180,14 @@ class AugurForkCalculator {
       console.log(`Risk Level: ${riskLevel}`);
       console.log(`Largest Dispute Bond: ${largestDisputeBond} REP`);
       console.log(`Fork Threshold: ${forkThresholdPercent.toFixed(2)}%`);
+      console.log(`RPC Used: ${this.rpcUsed} (${this.rpcLatency}ms)`);
+      console.log(`Block Number: ${blockNumber}`);
       
       return results;
       
     } catch (error) {
       console.error('Error calculating fork risk:', error);
-      return this.getErrorResult(error.message);
+      throw error; // Don't return mock data - let the error bubble up
     }
   }
 
@@ -175,15 +219,34 @@ class AugurForkCalculator {
   }
 
   async getRepMarketCap() {
-    // Mock implementation - in production would get from price oracle
-    const repPrice = 15; // $15 per REP (mock)
-    const totalSupply = 11000000; // 11M REP
-    return repPrice * totalSupply; // $165M market cap
+    // TODO: Implement real price oracle integration (Chainlink, DEX, etc.)
+    // For now using estimated values - this is a known limitation
+    const repPrice = 15; // $15 per REP (estimated - needs real price feed)
+    
+    try {
+      // Get actual REP total supply from contract
+      const totalSupply = await this.contracts.repV2Token.totalSupply();
+      const totalSupplyNumber = Number(ethers.formatEther(totalSupply));
+      console.log(`REP Total Supply: ${totalSupplyNumber.toLocaleString()} REP`);
+      return repPrice * totalSupplyNumber;
+    } catch (error) {
+      console.warn('Failed to get REP total supply, using fallback:', error.message);
+      const fallbackSupply = 11000000; // 11M REP fallback
+      return repPrice * fallbackSupply;
+    }
   }
 
   async getOpenInterest() {
-    // Mock implementation - would query actual open interest
-    return 50000000; // $50M open interest (mock)
+    // TODO: Implement real open interest calculation from Universe contract
+    // For now using estimated values - this is a known limitation
+    try {
+      // Could query universe.getOpenInterest() if that method exists
+      console.log('Using estimated open interest (TODO: implement real calculation)');
+      return 50000000; // $50M open interest (estimated)
+    } catch (error) {
+      console.warn('Open interest calculation not yet implemented');
+      return 50000000; // $50M open interest (fallback)
+    }
   }
 
   calculateSecurityRatio(marketCap, openInterest) {
@@ -259,11 +322,45 @@ async function main() {
     const results = await calculator.calculateForkRisk();
     await calculator.saveResults(results);
     
-    console.log('Fork risk calculation completed successfully');
+    console.log('\n✓ Fork risk calculation completed successfully');
+    console.log(`Results saved with ${results.rpcInfo.isPublicRpc ? 'PUBLIC' : 'CUSTOM'} RPC: ${results.rpcInfo.endpoint}`);
     process.exit(0);
     
   } catch (error) {
-    console.error('Fatal error:', error);
+    console.error('\n✗ Fatal error during fork risk calculation:');
+    console.error(`Error: ${error.message}`);
+    
+    // Create an error result to save
+    const errorResult = {
+      timestamp: new Date().toISOString(),
+      riskLevel: 'unknown',
+      riskPercentage: 0,
+      error: error.message,
+      rpcInfo: {
+        endpoint: null,
+        latency: null,
+        fallbacksAttempted: calculator.fallbacksAttempted,
+        isPublicRpc: false
+      },
+      metrics: {
+        largestDisputeBond: 0,
+        forkThresholdPercent: 0,
+        repMarketCap: 0,
+        openInterest: 0,
+        securityRatio: 0,
+        activeDisputes: 0,
+        disputeDetails: []
+      },
+      nextUpdate: new Date(Date.now() + 60 * 60 * 1000).toISOString()
+    };
+    
+    try {
+      await calculator.saveResults(errorResult);
+      console.log('Error state saved to JSON file');
+    } catch (saveError) {
+      console.error('Failed to save error state:', saveError.message);
+    }
+    
     process.exit(1);
   }
 }

@@ -77,20 +77,38 @@ Final Risk Percentage = Base Risk Score + Security Risk Score
 ## Data Sources and Architecture
 
 ### Blockchain Data Collection
-- **Ethereum Mainnet**: Primary data source via JSON-RPC
-- **Augur Contracts**: Universe, Market, and DisputeCrowdsourcer contracts
+- **Ethereum Mainnet**: Primary data source via public JSON-RPC endpoints
+- **Augur v2 Contracts**: Verified contract addresses from official deployment
+  - Universe: `0xe991247b78f937d7b69cfc00f1a487a293557677`
+  - REPv2 Token: `0x221657776846890989a759ba2973e427dff5c9bb`
+  - Augur Main: `0x75228dce4d82566d93068a8d5d49435216551599`
+  - Cash (DAI): `0xd5524179cb7ae012f5b642c1d6d700bbaa76b96b`
 - **Event Monitoring**: DisputeCrowdsourcerCreated, DisputeCrowdsourcerCompleted events
 
 ### Infrastructure Design
 - **GitHub Actions**: Hourly automated calculations (sufficient for 7-day dispute windows)
+- **Public RPC Endpoints**: No API keys required, fully transparent access
+  - Primary: Ankr Public RPC (`https://rpc.ankr.com/eth`)
+  - Fallbacks: LlamaRPC, LinkPool, PublicNode, 1RPC
 - **Static JSON Storage**: Results saved to version-controlled JSON file
 - **Audit Trail**: All calculations and changes tracked in git history
-- **No Private Database**: Fully transparent and auditable
+- **No Private Infrastructure**: No databases, no API keys, fully auditable
 
 ### Update Frequency
 - **Calculation**: Every hour via GitHub Actions
 - **UI Refresh**: Every 5 minutes (data changes hourly)
 - **Manual Triggers**: Available for testing and immediate updates
+
+### RPC Failover Strategy
+The system attempts to connect to RPC endpoints in order of preference:
+1. **Custom RPC** (if `ETH_RPC_URL` environment variable is set)
+2. **Ankr Public RPC** (`https://rpc.ankr.com/eth`)
+3. **LlamaRPC** (`https://eth.llamarpc.com`)
+4. **LinkPool** (`https://main-light.eth.linkpool.io`)
+5. **PublicNode** (`https://ethereum.publicnode.com`)
+6. **1RPC** (`https://1rpc.io/eth`)
+
+Each endpoint is tested with a `getBlockNumber()` call before use. If all endpoints fail, the system reports an error state rather than falling back to mock data. Connection latency and endpoint used are logged for transparency.
 
 ## Transparency and Auditability
 
@@ -109,10 +127,18 @@ Anyone can verify calculations by:
 
 ## Limitations and Considerations
 
+### Current Implementation Status
+**⚠️ Important**: This version uses verified Augur v2 contract addresses but has some temporary limitations:
+
+1. **Dispute Monitoring**: Currently using mock dispute data (real event parsing not yet implemented)
+2. **REP Price Feed**: Using estimated $15/REP (real price oracle integration needed)
+3. **Open Interest**: Using estimated values (Universe contract integration pending)
+
 ### Known Limitations
-1. **REP Price Data**: Currently relies on external price oracles
-2. **Market Cap Estimation**: May have slight variations based on data sources
-3. **Future Scenarios**: Cannot predict unknown attack vectors or governance changes
+1. **Limited Augur Activity**: Augur v2 on mainnet has very low activity due to high gas fees
+2. **Augur Turbo Migration**: Most activity moved to Polygon-based Augur Turbo (different architecture)
+3. **Price Data Dependency**: Market cap calculations require external price feeds
+4. **Event Parsing**: Full dispute event monitoring requires additional development
 
 ### Timing Considerations
 - **Dispute Windows**: 7 days each, hourly monitoring is sufficient
