@@ -1,49 +1,49 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #00ff88;
-  --color-muted-primary: #008844;
+	--color-primary: #00ff88;
+	--color-muted-primary: #008844;
 }
 
 :root {
-  --gauge-color-safe: #00ff88;
-  --gauge-color-safe-mid: #22ff99;
-  --gauge-color-warning: #ffff00;
-  --gauge-color-danger: #ff8800;
-  --gauge-color-critical: #ff0044;
-  --gauge-bg-color: oklch(from var(--color-muted-primary) l c h / 0.25);
-  --gauge-thickness: 10;
+	--gauge-color-safe: #00ff88;
+	--gauge-color-safe-mid: #22ff99;
+	--gauge-color-warning: #ffff00;
+	--gauge-color-danger: #ff8800;
+	--gauge-color-critical: #ff0044;
+	--gauge-bg-color: oklch(from var(--color-muted-primary) l c h / 0.25);
+	--gauge-thickness: 10;
 }
 
 body {
-  background: #0a0a0a;
-  color: #ffffff;
-  font-family: 'Handjet', monospace;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  letter-spacing: 0.05em;
+	background: #0a0a0a;
+	color: #ffffff;
+	font-family: "Handjet", monospace;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	letter-spacing: 0.05em;
 }
 
 /* Range slider styling - browser specific */
 .slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  cursor: pointer;
-  border: 2px solid #ffffff;
+	-webkit-appearance: none;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: var(--color-primary);
+	cursor: pointer;
+	border: 2px solid #ffffff;
 }
 
 .slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  cursor: pointer;
-  border: 2px solid #ffffff;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: var(--color-primary);
+	cursor: pointer;
+	border: 2px solid #ffffff;
 }
