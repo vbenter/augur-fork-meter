@@ -17,10 +17,7 @@ A transparent, auditable monitoring system for Augur's fork probability. Provide
 npm install
 
 # Calculate current fork risk (uses public RPCs automatically!)
-npm run calculate-fork-risk
-
-# Copy data to public directory for web access
-cp data/fork-risk.json public/data/
+npm run build:fork-data
 
 # Start development server
 npm run dev
@@ -37,7 +34,7 @@ npm run build
 - **GitHub Actions**: Runs hourly to calculate fork risk metrics
 - **Public RPC Endpoints**: Connects to free Ethereum RPC services (no API keys!)
 - **Verified Contracts**: Uses official Augur v2 mainnet addresses
-- **Static Storage**: Results saved to `data/fork-risk.json`
+- **Static Storage**: Results saved to `public/data/fork-risk.json`
 - **Git Audit Trail**: All changes tracked in version control
 
 ### Risk Calculation
@@ -99,11 +96,12 @@ The monitoring system automatically runs via GitHub Actions. See `.github/workfl
 ### Project Structure
 ```
 ├── scripts/
-│   └── calculate-fork-risk.js     # Main calculation logic
+│   └── calculate-fork-risk.ts    # TypeScript calculation logic
 ├── contracts/
 │   └── augur-abis.json           # Smart contract ABIs
-├── data/
-│   └── fork-risk.json            # Generated risk data
+├── public/
+│   └── data/
+│       └── fork-risk.json        # Generated risk data (gitignored)
 ├── src/
 │   ├── components/
 │   │   ├── ForkMeter.tsx         # Main UI component
@@ -111,21 +109,43 @@ The monitoring system automatically runs via GitHub Actions. See `.github/workfl
 │   │   └── ...                   # Other UI components
 │   └── types/
 │       └── gauge.ts              # TypeScript definitions
+├── tsconfig.json                 # Root TypeScript config with project references
+├── tsconfig.app.json             # Astro app TypeScript config
+├── tsconfig.scripts.json         # Scripts TypeScript config
 └── docs/
     └── methodology.md            # Risk calculation methodology
 ```
 
-### Running Calculations Manually
+### Development & TypeScript
+
+This project uses TypeScript with project references for clean separation:
+
 ```bash
-# Uses public RPCs automatically (no API key needed!)
-npm run calculate-fork-risk
+# Calculate fork risk data (TypeScript with Node.js 22)
+npm run build:fork-data
+
+# Type-check all TypeScript files
+npm run typecheck
 
 # Or with a custom RPC endpoint
-ETH_RPC_URL="https://your-rpc-endpoint.com" npm run calculate-fork-risk
+ETH_RPC_URL="https://your-rpc-endpoint.com" npm run build:fork-data
 
 # Check which RPC was used
-cat data/fork-risk.json | grep -A 5 "rpcInfo"
+cat public/data/fork-risk.json | grep -A 5 "rpcInfo"
 ```
+
+### TypeScript Configuration
+- **`tsconfig.app.json`** - Frontend Astro application
+- **`tsconfig.scripts.json`** - Node.js scripts  
+- Uses Node.js 22's native TypeScript support (`--experimental-strip-types`)
+- Build cache stored in `.tscache/` (gitignored)
+
+### Deployment
+The site deploys automatically via GitHub Actions:
+- Runs hourly to update fork risk data
+- Deploys to `gh-pages` branch (keeps main branch clean)
+- Static site build when CI environment detected
+- Uses only native git commands (no third-party actions)
 
 ## Transparency and Auditability
 
@@ -176,6 +196,7 @@ All commands are run from the root of the project, from a terminal:
 | `npm run dev`             | Starts local dev server at `localhost:4321`      |
 | `npm run build`           | Build your production site to `./dist/`          |
 | `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run calculate-fork-risk` | Calculate and update fork risk metrics       |
+| `npm run build:fork-data` | Calculate fork risk data (TypeScript)           |
+| `npm run typecheck`       | Type-check all TypeScript files                 |
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
