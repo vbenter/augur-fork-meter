@@ -104,9 +104,11 @@ The monitoring system automatically runs via GitHub Actions. See `.github/workfl
 │       └── fork-risk.json        # Generated risk data (gitignored)
 ├── src/
 │   ├── components/
+│   │   ├── App.tsx               # Root app component with provider
 │   │   ├── ForkMeter.tsx         # Main UI component
-│   │   ├── ForkRiskLoader.tsx    # Data loading component
 │   │   └── ...                   # Other UI components
+│   ├── contexts/
+│   │   └── ForkRiskContext.tsx   # React Context for fork risk data
 │   └── types/
 │       └── gauge.ts              # TypeScript definitions
 ├── tsconfig.json                 # Root TypeScript config with project references

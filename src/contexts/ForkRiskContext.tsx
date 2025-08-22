@@ -1,18 +1,27 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ForkRiskData, GaugeData, RiskLevel } from '../types/gauge';
 
-interface ForkRiskLoaderProps {
-  children: (data: {
-    gaugeData: GaugeData;
-    riskLevel: RiskLevel;
-    lastUpdated: string;
-    isLoading: boolean;
-    error?: string;
-    rawData?: ForkRiskData;
-  }) => React.ReactNode;
+interface ForkRiskContextValue {
+  gaugeData: GaugeData;
+  riskLevel: RiskLevel;
+  lastUpdated: string;
+  isLoading: boolean;
+  error?: string;
+  rawData?: ForkRiskData;
+  refetch: () => void;
 }
 
-export const ForkRiskLoader: React.FC<ForkRiskLoaderProps> = ({ children }) => {
+const ForkRiskContext = createContext<ForkRiskContextValue | undefined>(undefined);
+
+interface ForkRiskProviderProps {
+  children: React.ReactNode;
+  updateInterval?: number; // in milliseconds, defaults to 5 minutes
+}
+
+export const ForkRiskProvider: React.FC<ForkRiskProviderProps> = ({ 
+  children, 
+  updateInterval = 5 * 60 * 1000 // 5 minutes default
+}) => {
   const [forkRiskData, setForkRiskData] = useState<ForkRiskData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>();
@@ -36,7 +45,7 @@ export const ForkRiskLoader: React.FC<ForkRiskLoaderProps> = ({ children }) => {
       console.error('Error loading fork risk data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load data');
       
-      // Fallback to mock data if file doesn't exist
+      // Fallback to default data if file doesn't exist
       setForkRiskData(getDefaultData());
     } finally {
       setIsLoading(false);
@@ -47,10 +56,10 @@ export const ForkRiskLoader: React.FC<ForkRiskLoaderProps> = ({ children }) => {
   useEffect(() => {
     loadForkRiskData();
 
-    // Refresh every 5 minutes (data updates hourly, so this is reasonable)
-    const interval = setInterval(loadForkRiskData, 5 * 60 * 1000);
+    // Refresh at the specified interval (data updates hourly, so 5min default is reasonable)
+    const interval = setInterval(loadForkRiskData, updateInterval);
     return () => clearInterval(interval);
-  }, [loadForkRiskData]);
+  }, [loadForkRiskData, updateInterval]);
 
   const getDefaultData = (): ForkRiskData => ({
     timestamp: new Date().toISOString(),
@@ -117,16 +126,29 @@ export const ForkRiskLoader: React.FC<ForkRiskLoaderProps> = ({ children }) => {
 
   const currentData = forkRiskData || getDefaultData();
 
+  const contextValue: ForkRiskContextValue = {
+    gaugeData: convertToGaugeData(currentData),
+    riskLevel: convertToRiskLevel(currentData),
+    lastUpdated: formatLastUpdated(currentData),
+    isLoading,
+    error: error || currentData.error,
+    rawData: currentData,
+    refetch: loadForkRiskData
+  };
+
   return (
-    <>
-      {children({
-        gaugeData: convertToGaugeData(currentData),
-        riskLevel: convertToRiskLevel(currentData),
-        lastUpdated: formatLastUpdated(currentData),
-        isLoading,
-        error: error || currentData.error,
-        rawData: currentData
-      })}
-    </>
+    <ForkRiskContext.Provider value={contextValue}>
+      {children}
+    </ForkRiskContext.Provider>
   );
+};
+
+export const useForkRisk = (): ForkRiskContextValue => {
+  const context = useContext(ForkRiskContext);
+  
+  if (!context) {
+    throw new Error('useForkRisk must be used within a ForkRiskProvider');
+  }
+  
+  return context;
 };

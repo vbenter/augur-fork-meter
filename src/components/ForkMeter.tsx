@@ -3,7 +3,7 @@ import { cn } from '../lib/utils';
 import { GaugeDisplay } from './GaugeDisplay';
 import { DataPanels } from './DataPanels';
 import { FloatingControls } from './FloatingControls';
-import { ForkRiskLoader } from './ForkRiskLoader';
+import { useForkRisk } from '../contexts/ForkRiskContext';
 import type { GaugeData, RiskLevel } from '../types/gauge';
 
 export const ForkMeter: React.FC = () => {
@@ -17,11 +17,14 @@ export const ForkMeter: React.FC = () => {
   });
   const [demoLastUpdated, setDemoLastUpdated] = useState<string>('Never');
 
+  // Use the fork risk hook to get real data
+  const { gaugeData: realData, riskLevel: realRiskLevel, lastUpdated: realLastUpdated, isLoading, error } = useForkRisk();
+
   const generateLowRiskData = useCallback((): GaugeData => {
     const percentage = Math.random() * 25;
     const repStaked = Math.floor(Math.random() * 50000) + 10000;
     const activeDisputes = Math.floor(Math.random() * 3) + 1;
-    
+
     return { percentage, repStaked, activeDisputes };
   }, []);
 
@@ -29,7 +32,7 @@ export const ForkMeter: React.FC = () => {
     const percentage = 30 + Math.random() * 35;
     const repStaked = Math.floor(Math.random() * 150000) + 75000;
     const activeDisputes = Math.floor(Math.random() * 8) + 3;
-    
+
     return { percentage, repStaked, activeDisputes };
   }, []);
 
@@ -37,7 +40,7 @@ export const ForkMeter: React.FC = () => {
     const percentage = 70 + Math.random() * 30;
     const repStaked = Math.floor(Math.random() * 300000) + 200000;
     const activeDisputes = Math.floor(Math.random() * 15) + 8;
-    
+
     return { percentage, repStaked, activeDisputes };
   }, []);
 
@@ -45,7 +48,7 @@ export const ForkMeter: React.FC = () => {
     // Generate corresponding data based on percentage
     let repStaked: number;
     let activeDisputes: number;
-    
+
     if (percentage < 30) {
       repStaked = Math.floor(percentage * 2000) + 10000;
       activeDisputes = Math.floor(percentage / 10) + 1;
@@ -56,7 +59,7 @@ export const ForkMeter: React.FC = () => {
       repStaked = Math.floor(percentage * 3000) + 100000;
       activeDisputes = Math.floor(percentage / 5) + 5;
     }
-    
+
     return {
       percentage,
       repStaked,
@@ -119,61 +122,55 @@ export const ForkMeter: React.FC = () => {
     setIsDemoMode(false);
   }, []);
 
-  return (
-    <ForkRiskLoader>
-      {({ gaugeData: realData, riskLevel: realRiskLevel, lastUpdated: realLastUpdated, isLoading, error }) => {
-        // Use demo data if in demo mode, otherwise use real data
-        const displayData = isDemoMode ? demoData : realData;
-        const displayRiskLevel = isDemoMode ? getRiskLevel(demoData.percentage) : realRiskLevel;
-        const displayLastUpdated = isDemoMode ? demoLastUpdated : realLastUpdated;
+  // Use demo data if in demo mode, otherwise use real data
+  const displayData = isDemoMode ? demoData : realData;
+  const displayRiskLevel = isDemoMode ? getRiskLevel(demoData.percentage) : realRiskLevel;
+  const displayLastUpdated = isDemoMode ? demoLastUpdated : realLastUpdated;
 
-        return (
-          <div className={cn("max-w-4xl w-full text-center")}>
-            <h1 className="text-5xl mb-2 font-light tracking-[0.1em] text-primary">AUGUR FORK METER</h1>
-            <p className="text-lg mb-10 font-light tracking-[0.08em] uppercase text-muted-primary">
-              {isDemoMode ? 'Demo mode - showing simulated data' : 'Real-time monitoring of fork probability'}
-            </p>
-            
-            {isLoading && !isDemoMode && (
-              <div className="mb-4 text-muted-primary">Loading fork risk data...</div>
-            )}
-            
-            {error && !isDemoMode && (
-              <div className="mb-4 text-orange-400">Warning: {error}</div>
-            )}
-            
-            <GaugeDisplay percentage={displayData.percentage} />
-            
-            <DataPanels 
-              riskLevel={displayRiskLevel}
-              repStaked={displayData.repStaked}
-              activeDisputes={displayData.activeDisputes}
-            />
-            
-            <div className="mt-8 text-sm font-light tracking-[0.05em] uppercase text-muted-primary">
-              Last updated: <span className="text-primary">{displayLastUpdated}</span>
-              {isDemoMode && (
-                <button 
-                  onClick={handleExitDemoMode}
-                  className="ml-4 px-3 py-1 text-xs border border-primary/30 hover:border-primary/60 transition-colors"
-                >
-                  Exit Demo
-                </button>
-              )}
-            </div>
-            
-            <FloatingControls 
-              percentage={currentValue}
-              onSliderChange={handleSliderChange}
-              onLowRiskClick={handleLowRiskClick}
-              onMediumRiskClick={handleMediumRiskClick}
-              onHighRiskClick={handleHighRiskClick}
-              isPanelExpanded={isPanelExpanded}
-              onTogglePanel={handleTogglePanel}
-            />
-          </div>
-        );
-      }}
-    </ForkRiskLoader>
+  return (
+    <div className={cn("max-w-4xl w-full text-center")}>
+      <h1 className="text-5xl mb-2 font-light tracking-[0.1em] text-primary">AUGUR FORK METER</h1>
+      <p className="text-lg mb-10 font-light tracking-[0.08em] uppercase text-muted-primary">
+        {isDemoMode ? 'Demo mode - showing simulated data' : 'Real-time monitoring of fork probability'}
+      </p>
+
+      {isLoading && !isDemoMode && (
+        <div className="mb-4 text-muted-primary">Loading fork risk data...</div>
+      )}
+
+      {error && !isDemoMode && (
+        <div className="mb-4 text-orange-400">Warning: {error}</div>
+      )}
+
+      <GaugeDisplay percentage={displayData.percentage} />
+
+      <DataPanels 
+        riskLevel={displayRiskLevel}
+        repStaked={displayData.repStaked}
+        activeDisputes={displayData.activeDisputes}
+      />
+
+      <div className="mt-8 text-sm font-light tracking-[0.05em] uppercase text-muted-primary">
+        Last updated: <span className="text-primary">{displayLastUpdated}</span>
+        {isDemoMode && (
+          <button 
+            onClick={handleExitDemoMode}
+            className="ml-4 px-3 py-1 text-xs border border-primary/30 hover:border-primary/60 transition-colors"
+          >
+            Exit Demo
+          </button>
+        )}
+      </div>
+
+      <FloatingControls 
+        percentage={currentValue}
+        onSliderChange={handleSliderChange}
+        onLowRiskClick={handleLowRiskClick}
+        onMediumRiskClick={handleMediumRiskClick}
+        onHighRiskClick={handleHighRiskClick}
+        isPanelExpanded={isPanelExpanded}
+        onTogglePanel={handleTogglePanel}
+      />
+    </div>
   );
 };
