@@ -1,44 +1,29 @@
 {
-  "timestamp": "2025-08-22T12:51:36.661Z",
-  "blockNumber": 23196731,
+  "timestamp": "2025-08-22T15:42:16.193Z",
+  "blockNumber": 23197584,
   "riskLevel": "low",
-  "riskPercentage": 29,
+  "riskPercentage": 0,
   "metrics": {
-    "largestDisputeBond": 1500,
-    "forkThresholdPercent": 0.55,
-    "repMarketCap": 120955970.94842413,
-    "openInterest": 50000000,
-    "securityRatio": 2.42,
-    "activeDisputes": 2,
-    "disputeDetails": [
-      {
-        "marketId": "0xabc123...",
-        "title": "Will Bitcoin reach $100k by end of 2024?",
-        "disputeBondSize": 1500,
-        "disputeRound": 2,
-        "daysRemaining": 4
-      },
-      {
-        "marketId": "0xdef456...",
-        "title": "US Presidential Election 2024 Winner",
-        "disputeBondSize": 850,
-        "disputeRound": 1,
-        "daysRemaining": 6
-      }
-    ]
+    "largestDisputeBond": 0,
+    "forkThresholdPercent": 0,
+    "repMarketCap": 80637313.96561609,
+    "openInterest": 400,
+    "securityRatio": 201593.28,
+    "activeDisputes": 0,
+    "disputeDetails": []
   },
-  "nextUpdate": "2025-08-22T13:51:37.095Z",
+  "nextUpdate": "2025-08-22T16:42:45.957Z",
   "rpcInfo": {
     "endpoint": "https://eth.llamarpc.com",
-    "latency": 665,
-    "fallbacksAttempted": 1,
+    "latency": 504,
+    "fallbacksAttempted": 0,
     "isPublicRpc": true
   },
   "calculation": {
     "method": "GitHub Actions + Public RPC",
     "forkThreshold": 275000,
     "securityMultiplier": {
-      "current": 2.419119418968483,
+      "current": 201593.28491404024,
       "minimum": 3,
       "target": 5
     }

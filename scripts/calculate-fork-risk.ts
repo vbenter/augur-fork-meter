@@ -77,9 +77,13 @@ const FORK_THRESHOLD_REP = 275000; // 2.5% of 11 million REP
 const MINIMUM_SECURITY_MULTIPLIER = 3;
 const TARGET_SECURITY_MULTIPLIER = 5;
 
+// Price estimates (update these periodically or integrate price feeds)
+const ESTIMATED_REP_PRICE_USD = 10; // $10 per REP (conservative estimate as of 2024)
+const ESTIMATED_ETH_PRICE_USD = 2500; // $2500 per ETH
+// Note: For production, consider integrating Chainlink or DEX price feeds
+
 // Public RPC endpoints (no API keys required!)
 const PUBLIC_RPC_ENDPOINTS = [
-  'https://rpc.ankr.com/eth',           // Ankr public
   'https://eth.llamarpc.com',           // LlamaRPC
   'https://main-light.eth.linkpool.io', // LinkPool
   'https://ethereum.publicnode.com',    // PublicNode
@@ -179,8 +183,15 @@ class AugurForkCalculator {
       
       // Get current blockchain state
       const blockNumber = await this.provider!.getBlockNumber();
-      console.log(blockNumber)
+      console.log(`Block Number: ${blockNumber}`);
       const timestamp = new Date().toISOString();
+      
+      // Check if universe is already forking
+      const isForking = await this.contracts.universe.isForking();
+      if (isForking) {
+        console.log('⚠️ UNIVERSE IS FORKING! Setting maximum risk level');
+        return this.getForkingResult(timestamp, blockNumber);
+      }
       
       // Calculate key metrics
       const activeDisputes = await this.getActiveDisputes();
@@ -243,25 +254,112 @@ class AugurForkCalculator {
   }
 
   async getActiveDisputes(): Promise<DisputeDetails[]> {
-    // Mock implementation - in production this would query actual dispute events
-    const mockDisputes: DisputeDetails[] = [
-      {
-        marketId: '0xabc123...',
-        title: 'Will Bitcoin reach $100k by end of 2024?',
-        disputeBondSize: 1500,
-        disputeRound: 2,
-        daysRemaining: 4
-      },
-      {
-        marketId: '0xdef456...',
-        title: 'US Presidential Election 2024 Winner',
-        disputeBondSize: 850,
-        disputeRound: 1,
-        daysRemaining: 6
+    try {
+      console.log('Querying DisputeCrowdsourcerCreated events...');
+      
+      // Query events in smaller chunks due to RPC block limit (1000 blocks max)
+      const currentBlock = await this.provider!.getBlockNumber();
+      const blocksPerDay = 7200; // Approximate blocks per day (12 second blocks)
+      const searchPeriod = 7 * blocksPerDay; // Last 7 days
+      const fromBlock = currentBlock - searchPeriod;
+      
+      const allEvents: ethers.EventLog[] = [];
+      const chunkSize = 1000; // Max blocks per query for most RPC providers
+      
+      // Query in chunks to avoid RPC limits
+      for (let start = fromBlock; start < currentBlock; start += chunkSize) {
+        const end = Math.min(start + chunkSize - 1, currentBlock);
+        
+        try {
+          const eventFilter = this.contracts.augur.filters.DisputeCrowdsourcerCreated();
+          const chunkEvents = await this.contracts.augur.queryFilter(eventFilter, start, end);
+          allEvents.push(...(chunkEvents.filter(e => e instanceof ethers.EventLog) as ethers.EventLog[]));
+          
+          if (chunkEvents.length > 0) {
+            console.log(`Found ${chunkEvents.length} events in blocks ${start}-${end}`);
+          }
+        } catch (chunkError) {
+          console.warn(`Failed to query blocks ${start}-${end}:`, chunkError instanceof Error ? chunkError.message : String(chunkError));
+        }
       }
-    ];
-    
-    return mockDisputes;
+      
+      const events = allEvents;
+      
+      console.log(`Found ${events.length} DisputeCrowdsourcerCreated events in last 30 days`);
+      
+      const disputes: DisputeDetails[] = [];
+      
+      for (const event of events) {
+        try {
+          // Each event should have args: [universe, market, disputeCrowdsourcer, payoutNumerators, size, invalid]
+          if (!event.args || !Array.isArray(event.args) || event.args.length < 5) continue;
+          
+          const [universe, marketAddress, disputeCrowdsourcerAddress, payoutNumerators, bondSizeWei] = event.args;
+          
+          // Convert bond size from wei to REP tokens
+          const bondSizeRep = Number(ethers.formatEther(bondSizeWei));
+          
+          // Try to get market details (this might fail for old/finalized markets)
+          let marketTitle = `Market ${marketAddress.substring(0, 10)}...`;
+          let disputeRound = 1;
+          let daysRemaining = 7;
+          
+          try {
+            // Create market contract instance to get more details
+            const marketContract = new ethers.Contract(marketAddress, [
+              {
+                "constant": true,
+                "inputs": [],
+                "name": "getNumParticipants",
+                "outputs": [{"name": "", "type": "uint256"}],
+                "type": "function"
+              },
+              {
+                "constant": true,
+                "inputs": [],
+                "name": "isFinalized",
+                "outputs": [{"name": "", "type": "bool"}],
+                "type": "function"
+              }
+            ], this.provider!);
+            
+            // Skip if market is finalized
+            const isFinalized = await marketContract.isFinalized();
+            if (isFinalized) continue;
+            
+            // Estimate dispute round based on bond size
+            // Initial bond is ~$12.5k, doubles each round
+            const initialBondRep = 625; // Approximate initial bond in REP
+            disputeRound = Math.max(1, Math.ceil(Math.log2(bondSizeRep / initialBondRep)));
+            
+          } catch (marketError) {
+            // If we can't get market details, use defaults
+            console.warn(`Could not get details for market ${marketAddress}`);
+          }
+          
+          disputes.push({
+            marketId: marketAddress,
+            title: marketTitle,
+            disputeBondSize: bondSizeRep,
+            disputeRound,
+            daysRemaining
+          });
+          
+        } catch (eventError) {
+          console.warn('Error processing dispute event:', eventError instanceof Error ? eventError.message : String(eventError));
+        }
+      }
+      
+      // Sort by bond size (largest first) and return top 10
+      const sortedDisputes = disputes.sort((a, b) => b.disputeBondSize - a.disputeBondSize);
+      console.log(`Processed ${sortedDisputes.length} active disputes`);
+      
+      return sortedDisputes.slice(0, 10);
+      
+    } catch (error) {
+      console.warn('Failed to query dispute events, using empty array:', error instanceof Error ? error.message : String(error));
+      return [];
+    }
   }
 
   getLargestDisputeBond(disputes: DisputeDetails[]): number {
@@ -270,32 +368,41 @@ class AugurForkCalculator {
   }
 
   async getRepMarketCap(): Promise<number> {
-    // TODO: Implement real price oracle integration (Chainlink, DEX, etc.)
-    // For now using estimated values - this is a known limitation
-    const repPrice = 15; // $15 per REP (estimated - needs real price feed)
-    
     try {
-      // Get actual REP total supply from contract
+      // Get REP total supply from the REP token contract (more reliable than Universe method)
       const totalSupply = await this.contracts.repV2Token.totalSupply();
       const totalSupplyNumber = Number(ethers.formatEther(totalSupply));
+      
+      const marketCapUsd = ESTIMATED_REP_PRICE_USD * totalSupplyNumber;
+      
       console.log(`REP Total Supply: ${totalSupplyNumber.toLocaleString()} REP`);
-      return repPrice * totalSupplyNumber;
+      console.log(`REP Market Cap: $${marketCapUsd.toLocaleString()} USD (at $${ESTIMATED_REP_PRICE_USD}/REP estimated)`);
+      
+      return marketCapUsd;
     } catch (error) {
-      console.warn('Failed to get REP total supply, using fallback:', error instanceof Error ? error.message : String(error));
+      console.warn('Failed to get REP total supply:', error instanceof Error ? error.message : String(error));
+      // Fallback: 11M REP * price
       const fallbackSupply = 11000000; // 11M REP fallback
-      return repPrice * fallbackSupply;
+      const fallbackMarketCap = fallbackSupply * ESTIMATED_REP_PRICE_USD;
+      console.log(`Using fallback: ${fallbackSupply.toLocaleString()} REP × $${ESTIMATED_REP_PRICE_USD} = $${fallbackMarketCap.toLocaleString()}`);
+      return fallbackMarketCap;
     }
   }
 
   async getOpenInterest(): Promise<number> {
-    // TODO: Implement real open interest calculation from Universe contract
-    // For now using estimated values - this is a known limitation
     try {
-      // Could query universe.getOpenInterest() if that method exists
-      console.log('Using estimated open interest (TODO: implement real calculation)');
-      return 50000000; // $50M open interest (estimated)
+      // Get actual open interest from Universe contract (in wei)
+      const openInterestWei = await this.contracts.universe.getOpenInterestInAttoEth();
+      const openInterestEth = Number(ethers.formatEther(openInterestWei));
+      console.log(`Open Interest: ${openInterestEth.toLocaleString()} ETH`);
+      
+      // Convert ETH to USD using configured ETH price
+      const openInterestUsd = openInterestEth * ESTIMATED_ETH_PRICE_USD;
+      
+      console.log(`Open Interest: $${openInterestUsd.toLocaleString()} USD`);
+      return openInterestUsd;
     } catch (error) {
-      console.warn('Open interest calculation not yet implemented');
+      console.warn('Failed to get real open interest, using fallback:', error instanceof Error ? error.message : String(error));
       return 50000000; // $50M open interest (fallback)
     }
   }
@@ -330,6 +437,46 @@ class AugurForkCalculator {
     }
     
     return Math.round(baseRisk + securityRisk);
+  }
+
+  getForkingResult(timestamp: string, blockNumber: number): ForkRiskData {
+    return {
+      timestamp,
+      blockNumber,
+      riskLevel: 'critical',
+      riskPercentage: 100,
+      metrics: {
+        largestDisputeBond: FORK_THRESHOLD_REP, // Fork threshold was reached
+        forkThresholdPercent: 100,
+        repMarketCap: 0, // Will be calculated separately if needed
+        openInterest: 0, // Will be calculated separately if needed
+        securityRatio: 0,
+        activeDisputes: 0,
+        disputeDetails: [{
+          marketId: 'FORKING',
+          title: 'Universe is currently forking',
+          disputeBondSize: FORK_THRESHOLD_REP,
+          disputeRound: 99,
+          daysRemaining: 0
+        }]
+      },
+      nextUpdate: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      rpcInfo: {
+        endpoint: this.rpcUsed,
+        latency: this.rpcLatency,
+        fallbacksAttempted: this.fallbacksAttempted,
+        isPublicRpc: PUBLIC_RPC_ENDPOINTS.includes(this.rpcUsed!)
+      },
+      calculation: {
+        method: 'Fork Detected',
+        forkThreshold: FORK_THRESHOLD_REP,
+        securityMultiplier: {
+          current: 0,
+          minimum: MINIMUM_SECURITY_MULTIPLIER,
+          target: TARGET_SECURITY_MULTIPLIER
+        }
+      }
+    };
   }
 
   getErrorResult(errorMessage: string): ForkRiskData {

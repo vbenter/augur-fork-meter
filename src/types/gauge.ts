@@ -10,7 +10,7 @@ export interface RiskLevel {
 
 export interface ForkRiskData {
   timestamp: string;
-  blockNumber: number;
+  blockNumber?: number;
   riskLevel: 'low' | 'moderate' | 'high' | 'critical' | 'unknown';
   riskPercentage: number;
   metrics: {
@@ -29,6 +29,12 @@ export interface ForkRiskData {
     }>;
   };
   nextUpdate: string;
+  rpcInfo?: {
+    endpoint: string | null;
+    latency: number | null;
+    fallbacksAttempted: number;
+    isPublicRpc: boolean;
+  };
   calculation: {
     method: string;
     forkThreshold: number;

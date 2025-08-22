@@ -5,7 +5,35 @@
       {
         "constant": true,
         "inputs": [],
-        "name": "getOpenInterest",
+        "name": "getOpenInterestInAttoEth",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "isForking",
+        "outputs": [{"name": "", "type": "bool"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getForkEndTime",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getDisputeThresholdForFork",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getRepMarketCapInAttoeth",
         "outputs": [{"name": "", "type": "uint256"}],
         "type": "function"
       },
@@ -20,13 +48,6 @@
         "constant": true,
         "inputs": [],
         "name": "getDisputeRoundDurationInSeconds",
-        "outputs": [{"name": "", "type": "uint256"}],
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "getRepMarketCapInAttotokens",
         "outputs": [{"name": "", "type": "uint256"}],
         "type": "function"
       }
@@ -67,6 +88,18 @@
         "name": "isKnownUniverse",
         "outputs": [{"name": "", "type": "bool"}],
         "type": "function"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {"indexed": true, "name": "universe", "type": "address"},
+          {"indexed": true, "name": "market", "type": "address"},
+          {"indexed": false, "name": "disputeCrowdsourcer", "type": "address"},
+          {"indexed": false, "name": "payoutNumerators", "type": "uint256[]"},
+          {"indexed": false, "name": "size", "type": "uint256"}
+        ],
+        "name": "DisputeCrowdsourcerCreated",
+        "type": "event"
       }
     ]
   },
