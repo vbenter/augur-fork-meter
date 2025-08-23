@@ -1,5 +1,4 @@
 import type React from 'react'
-import { cn } from '../lib/utils'
 
 interface RiskBadgeProps {
 	level: 'Low' | 'Medium' | 'High' | 'Critical'

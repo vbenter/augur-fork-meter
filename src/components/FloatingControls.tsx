@@ -72,12 +72,12 @@ export const FloatingControls = ({
 					</button>
 				</div>
 
-				<div
+				<button
 					className="absolute -left-10 top-1/2 -translate-y-1/2 w-10 h-15 bg-gray-900/95 border border-primary/30 border-r-0 rounded-l-lg text-muted-primary cursor-pointer flex items-center justify-center text-lg transition-colors duration-300 hover:bg-gray-800/95 hover:text-muted-primary"
 					onClick={onTogglePanel}
 				>
 					⚙
-				</div>
+				</button>
 			</div>
 		</div>
 	)
