@@ -322,7 +322,7 @@ async function getActiveDisputes(provider: ethers.JsonRpcProvider, contracts: Re
 					if (
 						!event.args ||
 						!Array.isArray(event.args) ||
-						event.args.length < 5
+						event.args.length < 6
 					)
 						continue
 
@@ -332,6 +332,7 @@ async function getActiveDisputes(provider: ethers.JsonRpcProvider, contracts: Re
 						_disputeCrowdsourcerAddress,
 						_payoutNumerators,
 						bondSizeWei,
+						isInvalid,
 					] = event.args
 
 					// Convert bond size from wei to REP tokens
