@@ -13,9 +13,9 @@
  */
 
 import { ethers } from 'ethers'
-import { promises as fs } from 'fs'
-import * as path from 'path'
-import { fileURLToPath, pathToFileURL } from 'url'
+import { promises as fs } from 'node:fs'
+import * as path from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -33,7 +33,6 @@ interface RpcInfo {
 	endpoint: string | null
 	latency: number | null
 	fallbacksAttempted: number
-	isPublicRpc: boolean
 }
 
 interface Metrics {
@@ -90,6 +89,13 @@ const PUBLIC_RPC_ENDPOINTS = [
 	'https://1rpc.io/eth', // 1RPC
 ]
 
+interface RpcConnection {
+	provider: ethers.JsonRpcProvider
+	endpoint: string
+	latency: number
+	fallbacksAttempted: number
+}
+
 // Risk level thresholds (percentage of fork threshold)
 const RISK_LEVELS = {
 	LOW: 0.5, // <0.5% of fork threshold
@@ -98,252 +104,220 @@ const RISK_LEVELS = {
 	CRITICAL: 10.0, // >5% of threshold (anything over 10% is imminent)
 }
 
-class AugurForkCalculator {
-	private provider: ethers.JsonRpcProvider | null = null
-	private contracts: Record<string, ethers.Contract> = {}
-	private rpcUsed: string | null = null
-	private rpcLatency: number | null = null
-	private fallbacksAttempted: number = 0
+async function getWorkingProvider(): Promise<RpcConnection> {
+	let fallbacksAttempted = 0
 
-	async getWorkingProvider(): Promise<ethers.JsonRpcProvider> {
-		// First try custom RPC if provided
-		const customRpc = process.env.ETH_RPC_URL
-		if (customRpc && !customRpc.includes('YOUR-PROJECT-ID')) {
-			try {
-				console.log('Trying custom RPC:', customRpc)
-				const startTime = Date.now()
-				const provider = new ethers.JsonRpcProvider(customRpc)
-				await provider.getBlockNumber() // Test connection
-				this.rpcLatency = Date.now() - startTime
-				this.rpcUsed = customRpc
-				console.log(
-					`✓ Connected to custom RPC: ${customRpc} (${this.rpcLatency}ms)`,
-				)
-				return provider
-			} catch (error) {
-				console.log(
-					`✗ Custom RPC failed: ${error instanceof Error ? error.message : String(error)}`,
-				)
-				this.fallbacksAttempted++
-			}
-		}
-
-		// Try public RPC endpoints
-		for (const rpc of PUBLIC_RPC_ENDPOINTS) {
-			try {
-				console.log(`Trying public RPC: ${rpc}`)
-				const startTime = Date.now()
-				const provider = new ethers.JsonRpcProvider(rpc, 'mainnet')
-				await provider.getBlockNumber() // Test connection
-				this.rpcLatency = Date.now() - startTime
-				this.rpcUsed = rpc
-				console.log(`✓ Connected to: ${rpc} (${this.rpcLatency}ms)`)
-				return provider
-			} catch (error) {
-				console.log(
-					`✗ Failed to connect to ${rpc}: ${error instanceof Error ? error.message : String(error)}`,
-				)
-				this.fallbacksAttempted++
-			}
-		}
-
-		throw new Error(
-			`All RPC endpoints failed (attempted ${this.fallbacksAttempted})`,
-		)
-	}
-
-	async initialize(): Promise<void> {
+	// Try public RPC endpoints
+	for (const rpc of PUBLIC_RPC_ENDPOINTS) {
 		try {
-			console.log('Initializing Augur Fork Calculator...')
-			this.provider = await this.getWorkingProvider()
-			await this.loadContracts()
-			console.log('✓ Successfully initialized with real blockchain connection')
+			console.log(`Trying public RPC: ${rpc}`)
+			const startTime = Date.now()
+			const provider = new ethers.JsonRpcProvider(rpc, 'mainnet')
+			await provider.getBlockNumber() // Test connection
+			const latency = Date.now() - startTime
+			console.log(`✓ Connected to: ${rpc} (${latency}ms)`)
+			
+			return {
+				provider,
+				endpoint: rpc,
+				latency,
+				fallbacksAttempted,
+			}
 		} catch (error) {
-			console.error(
-				'✗ Failed to initialize blockchain connection:',
-				error instanceof Error ? error.message : String(error),
+			console.log(
+				`✗ Failed to connect to ${rpc}: ${error instanceof Error ? error.message : String(error)}`,
 			)
-			throw error // Don't fall back to mock data - fail transparently
+			fallbacksAttempted++
 		}
 	}
 
-	async loadContracts(): Promise<void> {
-		const abiPath = path.join(__dirname, '../contracts/augur-abis.json')
-		const abiData = await fs.readFile(abiPath, 'utf8')
-		const abis = JSON.parse(abiData)
+	throw new Error(
+		`All RPC endpoints failed (attempted ${fallbacksAttempted})`,
+	)
+}
 
-		// Initialize contract instances with correct names
-		this.contracts = {
-			universe: new ethers.Contract(
-				abis.universe.address,
-				abis.universe.abi,
-				this.provider!,
-			),
-			augur: new ethers.Contract(
-				abis.augur.address,
-				abis.augur.abi,
-				this.provider!,
-			),
-			repV2Token: new ethers.Contract(
-				abis.repV2Token.address,
-				abis.repV2Token.abi,
-				this.provider!,
-			),
-			cash: new ethers.Contract(
-				abis.cash.address,
-				abis.cash.abi,
-				this.provider!,
-			),
-		}
+async function loadContracts(provider: ethers.JsonRpcProvider): Promise<Record<string, ethers.Contract>> {
+	const abiPath = path.join(__dirname, '../contracts/augur-abis.json')
+	const abiData = await fs.readFile(abiPath, 'utf8')
+	const abis = JSON.parse(abiData)
 
-		console.log('✓ Loaded contracts:')
-		console.log(`  Universe: ${abis.universe.address}`)
-		console.log(`  Augur: ${abis.augur.address}`)
-		console.log(`  REPv2: ${abis.repV2Token.address}`)
-		console.log(`  Cash: ${abis.cash.address}`)
+	// Initialize contract instances with correct names
+	const contracts = {
+		universe: new ethers.Contract(
+			abis.universe.address,
+			abis.universe.abi,
+			provider,
+		),
+		augur: new ethers.Contract(
+			abis.augur.address,
+			abis.augur.abi,
+			provider,
+		),
+		repV2Token: new ethers.Contract(
+			abis.repV2Token.address,
+			abis.repV2Token.abi,
+			provider,
+		),
+		cash: new ethers.Contract(
+			abis.cash.address,
+			abis.cash.abi,
+			provider,
+		),
 	}
 
-	async calculateForkRisk(): Promise<ForkRiskData> {
-		try {
-			console.log('Starting fork risk calculation...')
+	console.log('✓ Loaded contracts:')
+	console.log(`  Universe: ${abis.universe.address}`)
+	console.log(`  Augur: ${abis.augur.address}`)
+	console.log(`  REPv2: ${abis.repV2Token.address}`)
+	console.log(`  Cash: ${abis.cash.address}`)
+	
+	return contracts
+}
 
-			// Get current blockchain state
-			const blockNumber = await this.provider!.getBlockNumber()
-			console.log(`Block Number: ${blockNumber}`)
-			const timestamp = new Date().toISOString()
+async function calculateForkRisk(): Promise<ForkRiskData> {
+	try {
+		console.log('Starting fork risk calculation...')
 
-			// Check if universe is already forking
-			const isForking = await this.contracts.universe.isForking()
-			if (isForking) {
-				console.log('⚠️ UNIVERSE IS FORKING! Setting maximum risk level')
-				return this.getForkingResult(timestamp, blockNumber)
-			}
+		// Get blockchain connection and contracts
+		const connection = await getWorkingProvider()
+		const contracts = await loadContracts(connection.provider)
 
-			// Calculate key metrics
-			const activeDisputes = await this.getActiveDisputes()
-			const largestDisputeBond = this.getLargestDisputeBond(activeDisputes)
-			const repMarketCap = await this.getRepMarketCap()
-			const openInterest = await this.getOpenInterest()
-			const securityRatio = this.calculateSecurityRatio(
+		// Get current blockchain state
+		const blockNumber = await connection.provider.getBlockNumber()
+		console.log(`Block Number: ${blockNumber}`)
+		const timestamp = new Date().toISOString()
+
+		// Check if universe is already forking
+		const isForking = await contracts.universe.isForking()
+		if (isForking) {
+			console.log('⚠️ UNIVERSE IS FORKING! Setting maximum risk level')
+			return getForkingResult(timestamp, blockNumber, connection)
+		}
+
+		// Calculate key metrics
+		const activeDisputes = await getActiveDisputes(connection.provider, contracts)
+		const largestDisputeBond = getLargestDisputeBond(activeDisputes)
+		const repMarketCap = await getRepMarketCap(contracts)
+		const openInterest = await getOpenInterest(contracts)
+		const securityRatio = calculateSecurityRatio(
+			repMarketCap,
+			openInterest,
+		)
+
+		// Calculate risk level
+		const forkThresholdPercent =
+			(largestDisputeBond / FORK_THRESHOLD_REP) * 100
+		const riskLevel = determineRiskLevel(
+			forkThresholdPercent,
+			securityRatio,
+		)
+		const riskPercentage = calculateRiskPercentage(
+			forkThresholdPercent,
+			securityRatio,
+		)
+
+		// Prepare results
+		const results: ForkRiskData = {
+			timestamp,
+			blockNumber,
+			riskLevel,
+			riskPercentage: Math.min(100, Math.max(0, riskPercentage)),
+			metrics: {
+				largestDisputeBond,
+				forkThresholdPercent: Math.round(forkThresholdPercent * 100) / 100,
 				repMarketCap,
 				openInterest,
-			)
-
-			// Calculate risk level
-			const forkThresholdPercent =
-				(largestDisputeBond / FORK_THRESHOLD_REP) * 100
-			const riskLevel = this.determineRiskLevel(
-				forkThresholdPercent,
-				securityRatio,
-			)
-			const riskPercentage = this.calculateRiskPercentage(
-				forkThresholdPercent,
-				securityRatio,
-			)
-
-			// Prepare results
-			const results: ForkRiskData = {
-				timestamp,
-				blockNumber,
-				riskLevel,
-				riskPercentage: Math.min(100, Math.max(0, riskPercentage)),
-				metrics: {
-					largestDisputeBond,
-					forkThresholdPercent: Math.round(forkThresholdPercent * 100) / 100,
-					repMarketCap,
-					openInterest,
-					securityRatio: Math.round(securityRatio * 100) / 100,
-					activeDisputes: activeDisputes.length,
-					disputeDetails: activeDisputes.slice(0, 5), // Top 5 disputes
+				securityRatio: Math.round(securityRatio * 100) / 100,
+				activeDisputes: activeDisputes.length,
+				disputeDetails: activeDisputes.slice(0, 5), // Top 5 disputes
+			},
+			nextUpdate: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour from now
+			rpcInfo: {
+				endpoint: connection.endpoint,
+				latency: connection.latency,
+				fallbacksAttempted: connection.fallbacksAttempted,
+			},
+			calculation: {
+				method: 'GitHub Actions + Public RPC',
+				forkThreshold: FORK_THRESHOLD_REP,
+				securityMultiplier: {
+					current: securityRatio,
+					minimum: MINIMUM_SECURITY_MULTIPLIER,
+					target: TARGET_SECURITY_MULTIPLIER,
 				},
-				nextUpdate: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour from now
-				rpcInfo: {
-					endpoint: this.rpcUsed,
-					latency: this.rpcLatency,
-					fallbacksAttempted: this.fallbacksAttempted,
-					isPublicRpc: PUBLIC_RPC_ENDPOINTS.includes(this.rpcUsed!),
-				},
-				calculation: {
-					method: 'GitHub Actions + Public RPC',
-					forkThreshold: FORK_THRESHOLD_REP,
-					securityMultiplier: {
-						current: securityRatio,
-						minimum: MINIMUM_SECURITY_MULTIPLIER,
-						target: TARGET_SECURITY_MULTIPLIER,
-					},
-				},
-			}
-
-			console.log('Calculation completed successfully')
-			console.log(`Risk Level: ${riskLevel}`)
-			console.log(`Largest Dispute Bond: ${largestDisputeBond} REP`)
-			console.log(`Fork Threshold: ${forkThresholdPercent.toFixed(2)}%`)
-			console.log(`RPC Used: ${this.rpcUsed} (${this.rpcLatency}ms)`)
-			console.log(`Block Number: ${blockNumber}`)
-
-			return results
-		} catch (error) {
-			console.error('Error calculating fork risk:', error)
-			throw error // Don't return mock data - let the error bubble up
+			},
 		}
+
+		console.log('Calculation completed successfully')
+		console.log(`Risk Level: ${riskLevel}`)
+		console.log(`Largest Dispute Bond: ${largestDisputeBond} REP`)
+		console.log(`Fork Threshold: ${forkThresholdPercent.toFixed(2)}%`)
+		console.log(`RPC Used: ${connection.endpoint} (${connection.latency}ms)`)
+		console.log(`Block Number: ${blockNumber}`)
+
+		return results
+	} catch (error) {
+		console.error('Error calculating fork risk:', error)
+		throw error // Don't return mock data - let the error bubble up
 	}
+}
 
-	async getActiveDisputes(): Promise<DisputeDetails[]> {
-		try {
-			console.log('Querying DisputeCrowdsourcerCreated events...')
+async function getActiveDisputes(provider: ethers.JsonRpcProvider, contracts: Record<string, ethers.Contract>): Promise<DisputeDetails[]> {
+	try {
+		console.log('Querying DisputeCrowdsourcerCreated events...')
 
-			// Query events in smaller chunks due to RPC block limit (1000 blocks max)
-			const currentBlock = await this.provider!.getBlockNumber()
-			const blocksPerDay = 7200 // Approximate blocks per day (12 second blocks)
-			const searchPeriod = 7 * blocksPerDay // Last 7 days
-			const fromBlock = currentBlock - searchPeriod
+		// Query events in smaller chunks due to RPC block limit (1000 blocks max)
+		const currentBlock = await provider.getBlockNumber()
+		const blocksPerDay = 7200 // Approximate blocks per day (12 second blocks)
+		const searchPeriod = 7 * blocksPerDay // Last 7 days
+		const fromBlock = currentBlock - searchPeriod
 
-			const allEvents: ethers.EventLog[] = []
-			const chunkSize = 1000 // Max blocks per query for most RPC providers
+		const allEvents: ethers.EventLog[] = []
+		const chunkSize = 1000 // Max blocks per query for most RPC providers
 
-			// Query in chunks to avoid RPC limits
-			for (let start = fromBlock; start < currentBlock; start += chunkSize) {
-				const end = Math.min(start + chunkSize - 1, currentBlock)
+		// Query in chunks to avoid RPC limits
+		for (let start = fromBlock; start < currentBlock; start += chunkSize) {
+			const end = Math.min(start + chunkSize - 1, currentBlock)
 
-				try {
-					const eventFilter =
-						this.contracts.augur.filters.DisputeCrowdsourcerCreated()
-					const chunkEvents = await this.contracts.augur.queryFilter(
-						eventFilter,
-						start,
-						end,
-					)
-					allEvents.push(
-						...(chunkEvents.filter(
-							(e) => e instanceof ethers.EventLog,
-						) as ethers.EventLog[]),
-					)
+			try {
+				const eventFilter =
+					contracts.augur.filters.DisputeCrowdsourcerCreated()
+				const chunkEvents = await contracts.augur.queryFilter(
+					eventFilter,
+					start,
+					end,
+				)
+				allEvents.push(
+					...(chunkEvents.filter(
+						(e) => e instanceof ethers.EventLog,
+					) as ethers.EventLog[]),
+				)
 
-					if (chunkEvents.length > 0) {
-						console.log(
-							`Found ${chunkEvents.length} events in blocks ${start}-${end}`,
-						)
-					}
-				} catch (chunkError) {
-					console.warn(
-						`Failed to query blocks ${start}-${end}:`,
-						chunkError instanceof Error
-							? chunkError.message
-							: String(chunkError),
+				if (chunkEvents.length > 0) {
+					console.log(
+						`Found ${chunkEvents.length} events in blocks ${start}-${end}`,
 					)
 				}
+			} catch (chunkError) {
+				console.warn(
+					`Failed to query blocks ${start}-${end}:`,
+					chunkError instanceof Error
+						? chunkError.message
+						: String(chunkError),
+				)
 			}
+		}
 
-			const events = allEvents
+		const events = allEvents
 
-			console.log(
-				`Found ${events.length} DisputeCrowdsourcerCreated events in last 30 days`,
-			)
+		console.log(
+			`Found ${events.length} DisputeCrowdsourcerCreated events in last 30 days`,
+		)
 
-			const disputes: DisputeDetails[] = []
+		const disputes: DisputeDetails[] = []
 
-			for (const event of events) {
-				try {
+		for (const event of events) {
+			try {
 					// Each event should have args: [universe, market, disputeCrowdsourcer, payoutNumerators, size, invalid]
 					if (
 						!event.args ||
@@ -353,10 +327,10 @@ class AugurForkCalculator {
 						continue
 
 					const [
-						universe,
+						_universe,
 						marketAddress,
-						disputeCrowdsourcerAddress,
-						payoutNumerators,
+						_disputeCrowdsourcerAddress,
+						_payoutNumerators,
 						bondSizeWei,
 					] = event.args
 
@@ -388,7 +362,7 @@ class AugurForkCalculator {
 									type: 'function',
 								},
 							],
-							this.provider!,
+							provider,
 						)
 
 						// Skip if market is finalized
@@ -402,7 +376,7 @@ class AugurForkCalculator {
 							1,
 							Math.ceil(Math.log2(bondSizeRep / initialBondRep)),
 						)
-					} catch (marketError) {
+					} catch (_marketError) {
 						// If we can't get market details, use defaults
 						console.warn(`Could not get details for market ${marketAddress}`)
 					}
@@ -424,122 +398,128 @@ class AugurForkCalculator {
 				}
 			}
 
-			// Sort by bond size (largest first) and return top 10
-			const sortedDisputes = disputes.sort(
-				(a, b) => b.disputeBondSize - a.disputeBondSize,
-			)
-			console.log(`Processed ${sortedDisputes.length} active disputes`)
+		// Sort by bond size (largest first) and return top 10
+		const sortedDisputes = disputes.sort(
+			(a, b) => b.disputeBondSize - a.disputeBondSize,
+		)
+		console.log(`Processed ${sortedDisputes.length} active disputes`)
 
-			return sortedDisputes.slice(0, 10)
-		} catch (error) {
-			console.warn(
-				'Failed to query dispute events, using empty array:',
-				error instanceof Error ? error.message : String(error),
-			)
-			return []
-		}
+		return sortedDisputes.slice(0, 10)
+	} catch (error) {
+		console.warn(
+			'Failed to query dispute events, using empty array:',
+			error instanceof Error ? error.message : String(error),
+		)
+		return []
 	}
+}
 
-	getLargestDisputeBond(disputes: DisputeDetails[]): number {
-		if (disputes.length === 0) return 0
-		return Math.max(...disputes.map((d) => d.disputeBondSize))
-	}
+function getLargestDisputeBond(disputes: DisputeDetails[]): number {
+	if (disputes.length === 0) return 0
+	return Math.max(...disputes.map((d) => d.disputeBondSize))
+}
 
-	async getRepMarketCap(): Promise<number> {
-		try {
-			// Get REP total supply from the REP token contract (more reliable than Universe method)
-			const totalSupply = await this.contracts.repV2Token.totalSupply()
-			const totalSupplyNumber = Number(ethers.formatEther(totalSupply))
+async function getRepMarketCap(contracts: Record<string, ethers.Contract>): Promise<number> {
+	try {
+		// Get REP total supply from the REP token contract (more reliable than Universe method)
+		const totalSupply = await contracts.repV2Token.totalSupply()
+		const totalSupplyNumber = Number(ethers.formatEther(totalSupply))
 
-			const marketCapUsd = ESTIMATED_REP_PRICE_USD * totalSupplyNumber
+		const marketCapUsd = ESTIMATED_REP_PRICE_USD * totalSupplyNumber
 
-			console.log(`REP Total Supply: ${totalSupplyNumber.toLocaleString()} REP`)
-			console.log(
-				`REP Market Cap: $${marketCapUsd.toLocaleString()} USD (at $${ESTIMATED_REP_PRICE_USD}/REP estimated)`,
-			)
+		console.log(`REP Total Supply: ${totalSupplyNumber.toLocaleString()} REP`)
+		console.log(
+			`REP Market Cap: $${marketCapUsd.toLocaleString()} USD (at $${ESTIMATED_REP_PRICE_USD}/REP estimated)`,
+		)
 
-			return marketCapUsd
-		} catch (error) {
-			console.warn(
-				'Failed to get REP total supply:',
-				error instanceof Error ? error.message : String(error),
-			)
-			// Fallback: 11M REP * price
-			const fallbackSupply = 11000000 // 11M REP fallback
-			const fallbackMarketCap = fallbackSupply * ESTIMATED_REP_PRICE_USD
-			console.log(
-				`Using fallback: ${fallbackSupply.toLocaleString()} REP × $${ESTIMATED_REP_PRICE_USD} = $${fallbackMarketCap.toLocaleString()}`,
-			)
+		return marketCapUsd
+	} catch (error) {
+		console.warn(
+			'Failed to get REP total supply:',
+			error instanceof Error ? error.message : String(error),
+		)
+		// Fallback: 11M REP * price
+		const fallbackSupply = 11000000 // 11M REP fallback
+		const fallbackMarketCap = fallbackSupply * ESTIMATED_REP_PRICE_USD
+		console.log(
+			`Using fallback: ${fallbackSupply.toLocaleString()} REP × $${ESTIMATED_REP_PRICE_USD} = $${fallbackMarketCap.toLocaleString()}`,
+		)
 			return fallbackMarketCap
 		}
 	}
 
-	async getOpenInterest(): Promise<number> {
-		try {
-			// Get actual open interest from Universe contract (in wei)
-			const openInterestWei =
-				await this.contracts.universe.getOpenInterestInAttoEth()
-			const openInterestEth = Number(ethers.formatEther(openInterestWei))
-			console.log(`Open Interest: ${openInterestEth.toLocaleString()} ETH`)
+async function getOpenInterest(contracts: Record<string, ethers.Contract>): Promise<number> {
+	try {
+		// Get total cash supply as proxy for open interest
+		// In Augur, cash tokens represent collateral locked in markets
+		const totalSupply = await contracts.cash.totalSupply()
+		const totalSupplyNumber = Number(ethers.formatEther(totalSupply))
+		const openInterestUsd = totalSupplyNumber * ESTIMATED_ETH_PRICE_USD
 
-			// Convert ETH to USD using configured ETH price
-			const openInterestUsd = openInterestEth * ESTIMATED_ETH_PRICE_USD
+		console.log(
+			`Cash Token Supply (Open Interest): ${totalSupplyNumber.toLocaleString()} ETH`,
+		)
+		console.log(
+			`Estimated Open Interest: $${openInterestUsd.toLocaleString()} USD`,
+		)
 
-			console.log(`Open Interest: $${openInterestUsd.toLocaleString()} USD`)
-			return openInterestUsd
-		} catch (error) {
-			console.warn(
-				'Failed to get real open interest, using fallback:',
-				error instanceof Error ? error.message : String(error),
-			)
-			return 50000000 // $50M open interest (fallback)
-		}
+		return openInterestUsd
+	} catch (error) {
+		console.warn(
+			'Failed to get open interest:',
+			error instanceof Error ? error.message : String(error),
+		)
+		// Fallback estimate based on typical Augur usage
+		const fallbackOpenInterest = 1000000 // $1M fallback
+		console.log(`Using fallback open interest: $${fallbackOpenInterest}`)
+		return fallbackOpenInterest
+	}
+}
+
+function calculateSecurityRatio(marketCap: number, openInterest: number): number {
+	return marketCap / openInterest
+}
+
+function determineRiskLevel(
+	forkThresholdPercent: number,
+	securityRatio: number,
+): RiskLevel {
+	// Adjust risk based on security ratio
+	let adjustedThresholdPercent = forkThresholdPercent
+
+	// If security ratio is below minimum, increase perceived risk
+	if (securityRatio < MINIMUM_SECURITY_MULTIPLIER) {
+		adjustedThresholdPercent *= MINIMUM_SECURITY_MULTIPLIER / securityRatio
 	}
 
-	calculateSecurityRatio(marketCap: number, openInterest: number): number {
-		return marketCap / openInterest
+	if (adjustedThresholdPercent >= RISK_LEVELS.CRITICAL) return 'critical'
+	if (adjustedThresholdPercent >= RISK_LEVELS.HIGH) return 'high'
+	if (adjustedThresholdPercent >= RISK_LEVELS.MODERATE) return 'moderate'
+	return 'low'
+}
+
+function calculateRiskPercentage(
+	forkThresholdPercent: number,
+	securityRatio: number,
+): number {
+	// Base risk from dispute bond size (0-50%)
+	const baseRisk = Math.min(50, (forkThresholdPercent / 10) * 50)
+
+	// Additional risk from poor security ratio (0-50%)
+	let securityRisk = 0
+	if (securityRatio < TARGET_SECURITY_MULTIPLIER) {
+		securityRisk = Math.max(
+			0,
+			((TARGET_SECURITY_MULTIPLIER - securityRatio) /
+				TARGET_SECURITY_MULTIPLIER) *
+				50,
+		)
 	}
 
-	determineRiskLevel(
-		forkThresholdPercent: number,
-		securityRatio: number,
-	): RiskLevel {
-		// Adjust risk based on security ratio
-		let adjustedThresholdPercent = forkThresholdPercent
+	return Math.round(baseRisk + securityRisk)
+}
 
-		// If security ratio is below minimum, increase perceived risk
-		if (securityRatio < MINIMUM_SECURITY_MULTIPLIER) {
-			adjustedThresholdPercent *= MINIMUM_SECURITY_MULTIPLIER / securityRatio
-		}
-
-		if (adjustedThresholdPercent >= RISK_LEVELS.CRITICAL) return 'critical'
-		if (adjustedThresholdPercent >= RISK_LEVELS.HIGH) return 'high'
-		if (adjustedThresholdPercent >= RISK_LEVELS.MODERATE) return 'moderate'
-		return 'low'
-	}
-
-	calculateRiskPercentage(
-		forkThresholdPercent: number,
-		securityRatio: number,
-	): number {
-		// Base risk from dispute bond size (0-50%)
-		const baseRisk = Math.min(50, (forkThresholdPercent / 10) * 50)
-
-		// Additional risk from poor security ratio (0-50%)
-		let securityRisk = 0
-		if (securityRatio < TARGET_SECURITY_MULTIPLIER) {
-			securityRisk = Math.max(
-				0,
-				((TARGET_SECURITY_MULTIPLIER - securityRatio) /
-					TARGET_SECURITY_MULTIPLIER) *
-					50,
-			)
-		}
-
-		return Math.round(baseRisk + securityRisk)
-	}
-
-	getForkingResult(timestamp: string, blockNumber: number): ForkRiskData {
+function getForkingResult(timestamp: string, blockNumber: number, connection: RpcConnection): ForkRiskData {
 		return {
 			timestamp,
 			blockNumber,
@@ -564,10 +544,9 @@ class AugurForkCalculator {
 			},
 			nextUpdate: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
 			rpcInfo: {
-				endpoint: this.rpcUsed,
-				latency: this.rpcLatency,
-				fallbacksAttempted: this.fallbacksAttempted,
-				isPublicRpc: PUBLIC_RPC_ENDPOINTS.includes(this.rpcUsed!),
+				endpoint: connection.endpoint,
+				latency: connection.latency,
+				fallbacksAttempted: connection.fallbacksAttempted,
 			},
 			calculation: {
 				method: 'Fork Detected',
@@ -581,7 +560,7 @@ class AugurForkCalculator {
 		}
 	}
 
-	getErrorResult(errorMessage: string): ForkRiskData {
+function getErrorResult(errorMessage: string): ForkRiskData {
 		return {
 			timestamp: new Date().toISOString(),
 			riskLevel: 'unknown',
@@ -600,8 +579,7 @@ class AugurForkCalculator {
 			rpcInfo: {
 				endpoint: null,
 				latency: null,
-				fallbacksAttempted: this.fallbacksAttempted,
-				isPublicRpc: false,
+				fallbacksAttempted: 0,
 			},
 			calculation: {
 				method: 'Error',
@@ -615,7 +593,7 @@ class AugurForkCalculator {
 		}
 	}
 
-	async saveResults(results: ForkRiskData): Promise<void> {
+async function saveResults(results: ForkRiskData): Promise<void> {
 		const outputPath = path.join(__dirname, '../public/data/fork-risk.json')
 
 		// Ensure data directory exists
@@ -625,21 +603,17 @@ class AugurForkCalculator {
 		await fs.writeFile(outputPath, JSON.stringify(results, null, 2))
 
 		console.log(`Results saved to ${outputPath}`)
-	}
 }
 
 // Main execution
 async function main(): Promise<void> {
-	const calculator = new AugurForkCalculator()
-
 	try {
-		await calculator.initialize()
-		const results = await calculator.calculateForkRisk()
-		await calculator.saveResults(results)
+		const results = await calculateForkRisk()
+		await saveResults(results)
 
 		console.log('\n✓ Fork risk calculation completed successfully')
 		console.log(
-			`Results saved with ${results.rpcInfo.isPublicRpc ? 'PUBLIC' : 'CUSTOM'} RPC: ${results.rpcInfo.endpoint}`,
+			`Results saved using PUBLIC RPC: ${results.rpcInfo.endpoint}`,
 		)
 		process.exit(0)
 	} catch (error) {
@@ -649,40 +623,12 @@ async function main(): Promise<void> {
 		)
 
 		// Create an error result to save
-		const errorResult: ForkRiskData = {
-			timestamp: new Date().toISOString(),
-			riskLevel: 'unknown',
-			riskPercentage: 0,
-			error: error instanceof Error ? error.message : String(error),
-			rpcInfo: {
-				endpoint: null,
-				latency: null,
-				fallbacksAttempted: calculator['fallbacksAttempted'],
-				isPublicRpc: false,
-			},
-			metrics: {
-				largestDisputeBond: 0,
-				forkThresholdPercent: 0,
-				repMarketCap: 0,
-				openInterest: 0,
-				securityRatio: 0,
-				activeDisputes: 0,
-				disputeDetails: [],
-			},
-			nextUpdate: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-			calculation: {
-				method: 'Error',
-				forkThreshold: FORK_THRESHOLD_REP,
-				securityMultiplier: {
-					current: 0,
-					minimum: MINIMUM_SECURITY_MULTIPLIER,
-					target: TARGET_SECURITY_MULTIPLIER,
-				},
-			},
-		}
+		const errorResult: ForkRiskData = getErrorResult(
+			error instanceof Error ? error.message : String(error)
+		)
 
 		try {
-			await calculator.saveResults(errorResult)
+			await saveResults(errorResult)
 			console.log('Error state saved to JSON file')
 		} catch (saveError) {
 			console.error(

@@ -100,13 +100,11 @@ Final Risk Percentage = Base Risk Score + Security Risk Score
 - **Manual Triggers**: Available for testing and immediate updates
 
 ### RPC Failover Strategy
-The system attempts to connect to RPC endpoints in order of preference:
-1. **Custom RPC** (if `ETH_RPC_URL` environment variable is set)
-2. **Ankr Public RPC** (`https://rpc.ankr.com/eth`)
-3. **LlamaRPC** (`https://eth.llamarpc.com`)
-4. **LinkPool** (`https://main-light.eth.linkpool.io`)
-5. **PublicNode** (`https://ethereum.publicnode.com`)
-6. **1RPC** (`https://1rpc.io/eth`)
+The system attempts to connect to public RPC endpoints in order of preference:
+1. **LlamaRPC** (`https://eth.llamarpc.com`)
+2. **LinkPool** (`https://main-light.eth.linkpool.io`)
+3. **PublicNode** (`https://ethereum.publicnode.com`)
+4. **1RPC** (`https://1rpc.io/eth`)
 
 Each endpoint is tested with a `getBlockNumber()` call before use. If all endpoints fail, the system reports an error state rather than falling back to mock data. Connection latency and endpoint used are logged for transparency.
 
@@ -120,7 +118,7 @@ Each endpoint is tested with a `getBlockNumber()` call before use. If all endpoi
 
 ### Verification Process
 Anyone can verify calculations by:
-1. Reviewing the calculation script: `scripts/calculate-fork-risk.js`
+1. Reviewing the calculation script: `scripts/calculate-fork-risk.ts`
 2. Checking historical data in git commits
 3. Running calculations independently using the same inputs
 4. Comparing results with the published JSON data
@@ -128,11 +126,11 @@ Anyone can verify calculations by:
 ## Limitations and Considerations
 
 ### Current Implementation Status
-**⚠️ Important**: This version uses verified Augur v2 contract addresses but has some temporary limitations:
+**✅ Fully Operational**: This version uses verified Augur v2 contract addresses and real blockchain data:
 
-1. **Dispute Monitoring**: Currently using mock dispute data (real event parsing not yet implemented)
-2. **REP Price Feed**: Using estimated $15/REP (real price oracle integration needed)
-3. **Open Interest**: Using estimated values (Universe contract integration pending)
+1. **Dispute Monitoring**: Real-time parsing of `DisputeCrowdsourcerCreated` events from Augur contracts
+2. **REP Price Feed**: Using conservative estimate of $10/REP (configurable for different scenarios)
+3. **Open Interest**: Calculated from actual Cash token supply on-chain
 
 ### Known Limitations
 1. **Limited Augur Activity**: Augur v2 on mainnet has very low activity due to high gas fees

@@ -82,12 +82,6 @@ The system automatically connects to these free, public Ethereum RPC endpoints:
 - No rate limiting issues with hourly GitHub Actions
 - Zero vendor lock-in - can always switch providers
 
-### Optional Custom RPC
-```bash
-# Optional: Use your own RPC endpoint
-ETH_RPC_URL=https://your-custom-rpc-endpoint.com
-```
-
 ### GitHub Actions Setup
 The monitoring system automatically runs via GitHub Actions. See `.github/workflows/fork-monitor.yml` for configuration.
 
@@ -129,11 +123,8 @@ npm run build:fork-data
 # Type-check all TypeScript files
 npm run typecheck
 
-# Or with a custom RPC endpoint
-ETH_RPC_URL="https://your-rpc-endpoint.com" npm run build:fork-data
-
-# Check which RPC was used
-cat public/data/fork-risk.json | grep -A 5 "rpcInfo"
+# Check which public RPC was used
+cat public/data/fork-risk.json | grep -A 3 "rpcInfo"
 ```
 
 ### TypeScript Configuration
