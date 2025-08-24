@@ -153,8 +153,10 @@ Anyone can verify calculations by:
 ### Contract Addresses (Mainnet)
 ```json
 {
-  "universe": "0x1f732847fbbcc46ffe859f28e916d993b2b08831",
-  "repToken": "0x1985365e9f78359a9B6AD760e32412f4a445E862"
+  "universe": "0xe991247b78f937d7b69cfc00f1a487a293557677",
+  "augur": "0x75228dce4d82566d93068a8d5d49435216551599",
+  "repToken": "0x221657776846890989a759ba2973e427dff5c9bb",
+  "cash": "0xd5524179cb7ae012f5b642c1d6d700bbaa76b96b"
 }
 ```
 
@@ -193,6 +195,6 @@ This methodology may evolve based on:
 
 ---
 
-**Last Updated**: August 21, 2025  
+**Last Updated**: August 24, 2025  
 **Version**: 1.0  
 **Maintained By**: Augur Fork Meter Project

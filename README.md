@@ -45,9 +45,11 @@ npm run build
 
 ### UI Components
 - **Real Data Mode**: Displays actual fork risk from JSON file
-- **Demo Mode**: Interactive controls for testing and demonstration
-- **Risk Visualization**: Gauge display with color-coded risk levels
-- **Detailed Metrics**: Shows active disputes, REP staked, security ratios
+- **Demo Mode**: Interactive controls via debug sidebar for testing and demonstration
+- **Risk Visualization**: SVG gauge display with gradient color-coded risk levels
+- **Debug Sidebar**: Live data display with formatted metrics and demo controls
+- **Top Bar Interface**: Settings/Demo button and demo mode indicator
+- **Detailed Metrics**: Shows active disputes, REP staked, security ratios, RPC info
 
 ## Documentation
 
@@ -70,8 +72,8 @@ The system automatically connects to these free, public Ethereum RPC endpoints:
 
 | Provider | Endpoint | Notes |
 |----------|----------|-------|
-| **Ankr** | `https://rpc.ankr.com/eth` | Primary endpoint |
-| **LlamaRPC** | `https://eth.llamarpc.com` | Public good project |
+| **LlamaRPC** | `https://eth.llamarpc.com` | Primary endpoint - Public good project |
+| **Ankr** | `https://rpc.ankr.com/eth` | Alternative endpoint |
 | **LinkPool** | `https://main-light.eth.linkpool.io` | Community provider |
 | **PublicNode** | `https://ethereum.publicnode.com` | Decentralized infrastructure |
 | **1RPC** | `https://1rpc.io/eth` | Privacy-focused RPC |
@@ -99,7 +101,9 @@ The monitoring system automatically runs via GitHub Actions. See `.github/workfl
 ├── src/
 │   ├── components/
 │   │   ├── App.tsx               # Root app component with provider
-│   │   ├── ForkMeter.tsx         # Main UI component
+│   │   ├── ForkMeter.tsx         # Main UI component with top bar
+│   │   ├── DebugSidebar.tsx      # Debug panel with live data & controls
+│   │   ├── GaugeDisplay.tsx      # SVG gauge visualization
 │   │   └── ...                   # Other UI components
 │   ├── contexts/
 │   │   └── ForkRiskContext.tsx   # React Context for fork risk data
@@ -117,7 +121,7 @@ The monitoring system automatically runs via GitHub Actions. See `.github/workfl
 This project uses TypeScript with project references for clean separation:
 
 ```bash
-# Calculate fork risk data (TypeScript with Node.js 22)
+# Calculate fork risk data (requires Node.js 22+ for --experimental-strip-types)
 npm run build:fork-data
 
 # Type-check all TypeScript files
@@ -171,7 +175,7 @@ MIT License - see LICENSE file for details.
 
 **⚠️ Current Limitations:**
 - Dispute monitoring uses mock data (real event parsing in development)
-- REP price estimation ($15/REP placeholder - price oracle needed)
+- REP price estimation ($10/REP placeholder - price oracle needed)
 - Open interest estimates (Universe contract integration pending)
 - Limited Augur activity on mainnet (most moved to Polygon)
 
