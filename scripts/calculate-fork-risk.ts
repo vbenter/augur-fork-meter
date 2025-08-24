@@ -14,7 +14,7 @@
 
 import { ethers } from 'ethers'
 import { promises as fs } from 'node:fs'
-import * as path from 'node:path'
+import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)

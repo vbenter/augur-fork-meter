@@ -2,13 +2,13 @@ import React, { useState, useCallback } from 'react'
 import { cn } from '../lib/utils'
 import { GaugeDisplay } from './GaugeDisplay'
 import { DataPanels } from './DataPanels'
-import { FloatingControls } from './FloatingControls'
+import { DebugSidebar } from './DebugSidebar'
 import { useForkRisk } from '../contexts/ForkRiskContext'
 import type { GaugeData, RiskLevel } from '../types/gauge'
 
 export const ForkMeter = () => {
 	const [currentValue, setCurrentValue] = useState<number>(0)
-	const [isPanelExpanded, setIsPanelExpanded] = useState<boolean>(false)
+	const [isDebugOpen, setIsDebugOpen] = useState<boolean>(false)
 	const [isDemoMode, setIsDemoMode] = useState<boolean>(false)
 	const [demoData, setDemoData] = useState<GaugeData>({
 		percentage: 0,
@@ -126,8 +126,12 @@ export const ForkMeter = () => {
 		enterDemoMode()
 	}, [generateHighRiskData, enterDemoMode])
 
-	const handleTogglePanel = useCallback(() => {
-		setIsPanelExpanded((prev) => !prev)
+	const handleToggleDebug = useCallback(() => {
+		setIsDebugOpen((prev) => !prev)
+	}, [])
+
+	const handleCloseDebug = useCallback(() => {
+		setIsDebugOpen(false)
 	}, [])
 
 	const handleExitDemoMode = useCallback(() => {
@@ -142,53 +146,97 @@ export const ForkMeter = () => {
 	const displayLastUpdated = isDemoMode ? demoLastUpdated : realLastUpdated
 
 	return (
-		<div className={cn('max-w-4xl w-full text-center')}>
-			<h1 className="text-5xl mb-2 font-light tracking-[0.1em] text-primary">
-				AUGUR FORK METER
-			</h1>
-			<p className="text-lg mb-10 font-light tracking-[0.08em] uppercase text-muted-primary">
-				{isDemoMode
-					? 'Demo mode - showing simulated data'
-					: 'Real-time monitoring of fork probability'}
-			</p>
-
-			{isLoading && !isDemoMode && (
-				<div className="mb-4 text-muted-primary">Loading fork risk data...</div>
-			)}
-
-			{error && !isDemoMode && (
-				<div className="mb-4 text-orange-400">Warning: {error}</div>
-			)}
-
-			<GaugeDisplay percentage={displayData.percentage} />
-
-			<DataPanels
-				riskLevel={displayRiskLevel}
-				repStaked={displayData.repStaked}
-				activeDisputes={displayData.activeDisputes}
-			/>
-
-			<div className="mt-8 text-sm font-light tracking-[0.05em] uppercase text-muted-primary">
-				Last updated: <span className="text-primary">{displayLastUpdated}</span>
-				{isDemoMode && (
-					<button
-						onClick={handleExitDemoMode}
-						className="ml-4 px-3 py-1 text-xs border border-primary/30 hover:border-primary/60 transition-colors"
-					>
-						Exit Demo
-					</button>
-				)}
+		<>
+			{/* Fixed Top Bar at Viewport Top */}
+			<div className={cn(
+				'fixed top-0 left-0 right-0 z-30 transition-all duration-300',
+				isDemoMode 
+					? 'bg-white/5' 
+					: 'bg-transparent'
+			)}>
+				<div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+					{/* Demo Text - Left Side */}
+					{isDemoMode && (
+						<div className="text-sm text-green-400">
+							Demo Mode
+						</div>
+					)}
+					
+					{/* Spacer when not in demo mode */}
+					{!isDemoMode && <div />}
+					
+					{/* Buttons - Right Side */}
+					<div className="flex items-center gap-2">
+						{/* Settings Button */}
+						<button
+							onClick={handleToggleDebug}
+							className={cn(
+								'px-3 py-1.5 text-sm transition-colors',
+								isDemoMode 
+									? 'hover:bg-white/10 text-green-400 hover:text-green-300'
+									: 'border border-primary/20 hover:border-primary/40 text-primary/60 hover:text-primary/80',
+								isDebugOpen && (isDemoMode ? 'bg-white/10' : 'bg-primary/10 border-primary/60')
+							)}
+						>
+							{isDemoMode ? 'Settings' : 'Demo'}
+						</button>
+						
+						{/* Reset Button - Only in Demo Mode */}
+						{isDemoMode && (
+							<button
+								onClick={handleExitDemoMode}
+								className="px-3 py-1.5 text-sm border border-green-400/50 hover:border-green-400/70 text-green-400 hover:text-green-300 transition-colors"
+							>
+								Reset
+							</button>
+						)}
+					</div>
+				</div>
 			</div>
 
-			<FloatingControls
-				percentage={currentValue}
+			{/* Main Content with Top Padding */}
+			<div className={cn('max-w-4xl w-full text-center pt-20')}>
+
+				<h1 className="text-5xl mb-2 font-light tracking-[0.1em] text-primary">
+					AUGUR FORK METER
+				</h1>
+				<p className="text-lg mb-10 font-light tracking-[0.08em] uppercase text-muted-primary">
+					Real-time monitoring of fork probability
+				</p>
+
+				{isLoading && !isDemoMode && (
+					<div className="mb-4 text-muted-primary">Loading fork risk data...</div>
+				)}
+
+				{error && !isDemoMode && (
+					<div className="mb-4 text-orange-400">Warning: {error}</div>
+				)}
+
+				<GaugeDisplay percentage={displayData.percentage} />
+
+				<DataPanels
+					riskLevel={displayRiskLevel}
+					repStaked={displayData.repStaked}
+					activeDisputes={displayData.activeDisputes}
+				/>
+
+				<div className="mt-8 text-sm font-light tracking-[0.05em] uppercase text-muted-primary">
+					Last updated: <span className="text-primary">{displayLastUpdated}</span>
+				</div>
+			</div>
+
+			{/* Debug Sidebar */}
+			<DebugSidebar
+				isOpen={isDebugOpen}
+				onClose={handleCloseDebug}
+				currentValue={currentValue}
 				onSliderChange={handleSliderChange}
 				onLowRiskClick={handleLowRiskClick}
 				onMediumRiskClick={handleMediumRiskClick}
 				onHighRiskClick={handleHighRiskClick}
-				isPanelExpanded={isPanelExpanded}
-				onTogglePanel={handleTogglePanel}
+				onResetToLiveData={handleExitDemoMode}
+				isDemoMode={isDemoMode}
 			/>
-		</div>
+		</>
 	)
 }
