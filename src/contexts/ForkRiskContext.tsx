@@ -14,7 +14,8 @@ interface ForkRiskContextValue {
 	lastUpdated: string
 	isLoading: boolean
 	error?: string
-	rawData?: ForkRiskData
+	rawData: ForkRiskData
+	setData: (data: ForkRiskData) => void
 	refetch: () => void
 }
 
@@ -40,7 +41,7 @@ export const ForkRiskProvider = ({
 		metrics: {
 			largestDisputeBond: 0,
 			forkThresholdPercent: 0,
-			repMarketCap: 165000000,
+			repMarketCap: 11000000,
 			openInterest: 50000000,
 			securityRatio: 3.3,
 			activeDisputes: 0,
@@ -143,6 +144,11 @@ export const ForkRiskProvider = ({
 
 	const currentData = forkRiskData || defaultData
 
+	// Allow external updates to the data (for demo usage)
+	const updateData = useCallback((data: ForkRiskData) => {
+		setForkRiskData(data)
+	}, [])
+
 	const contextValue: ForkRiskContextValue = {
 		gaugeData: convertToGaugeData(currentData),
 		riskLevel: convertToRiskLevel(currentData),
@@ -150,6 +156,7 @@ export const ForkRiskProvider = ({
 		isLoading,
 		error: error || currentData.error,
 		rawData: currentData,
+		setData: updateData,
 		refetch: loadForkRiskData,
 	}
 

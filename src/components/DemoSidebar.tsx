@@ -1,31 +1,48 @@
 import type React from 'react'
+import { useState } from 'react'
 import { cn } from '../lib/utils'
 import { useForkRisk } from '../contexts/ForkRiskContext'
+import { useDemo } from '../contexts/DemoContext'
 
-interface DebugSidebarProps {
+interface DemoSidebarProps {
 	isOpen: boolean
 	onClose: () => void
-	currentValue: number
-	onSliderChange: (percentage: number) => void
-	onLowRiskClick: () => void
-	onMediumRiskClick: () => void
-	onHighRiskClick: () => void
-	onResetToLiveData: () => void
-	isDemoMode: boolean
 }
 
-export const DebugSidebar = ({
+export const DemoSidebar = ({
 	isOpen,
 	onClose,
-	currentValue,
-	onSliderChange,
-	onLowRiskClick,
-	onMediumRiskClick,
-	onHighRiskClick,
-	onResetToLiveData,
-	isDemoMode,
-}: DebugSidebarProps): React.JSX.Element => {
+}: DemoSidebarProps): React.JSX.Element => {
+	const [currentValue, setCurrentValue] = useState<number>(0)
+	
+	// Get current data and demo controls from contexts
 	const { rawData, lastUpdated, isLoading, error } = useForkRisk()
+	const { isDemo, generateRisk, resetToLive } = useDemo()
+
+	// Handle slider changes
+	const handleSliderChange = (value: number) => {
+		setCurrentValue(value)
+		generateRisk(value)
+	}
+
+	// Handle preset buttons
+	const handleLowRisk = () => {
+		const value = 5
+		setCurrentValue(value)
+		generateRisk(value)
+	}
+
+	const handleMediumRisk = () => {
+		const value = 35
+		setCurrentValue(value)
+		generateRisk(value)
+	}
+
+	const handleHighRisk = () => {
+		const value = 75
+		setCurrentValue(value)
+		generateRisk(value)
+	}
 
 	const formatCurrency = (amount: number): string => {
 		return new Intl.NumberFormat('en-US', {
@@ -76,11 +93,62 @@ export const DebugSidebar = ({
 
 					{/* Content */}
 					<div className="flex-1 overflow-y-auto p-4 space-y-6">
+						{/* Demo Override Values Section - Only when in demo mode */}
+						{isDemo && (
+							<section>
+								<h3 className="text-sm font-medium text-green-400 mb-3 uppercase tracking-wide">
+									Current Values (Demo Active)
+								</h3>
+								<div className="bg-green-900/20 border border-green-700/50 p-3 rounded space-y-1">
+									<div className="flex justify-between">
+										<span className="text-muted-primary">Risk Level:</span>
+										<span className="text-green-300 capitalize">{rawData.riskLevel}</span>
+									</div>
+									
+									<div className="flex justify-between">
+										<span className="text-muted-primary">Risk Percentage:</span>
+										<span className="text-green-300">{rawData.riskPercentage}%</span>
+									</div>
+									
+									<div className="flex justify-between">
+										<span className="text-muted-primary">Active Disputes:</span>
+										<span className="text-green-300">{rawData.metrics.activeDisputes}</span>
+									</div>
+									
+									<div className="flex justify-between">
+										<span className="text-muted-primary">Largest Bond:</span>
+										<span className="text-green-300">{formatNumber(rawData.metrics.largestDisputeBond)} REP</span>
+									</div>
+									
+									<div className="flex justify-between">
+										<span className="text-muted-primary">REP Market Cap:</span>
+										<span className="text-green-300">{formatCurrency(rawData.metrics.repMarketCap)}</span>
+									</div>
+									
+									<div className="flex justify-between">
+										<span className="text-muted-primary">Open Interest:</span>
+										<span className="text-green-300">{formatCurrency(rawData.metrics.openInterest)}</span>
+									</div>
+									
+									<div className="flex justify-between">
+										<span className="text-muted-primary">Security Ratio:</span>
+										<span className="text-green-300">{rawData.metrics.securityRatio.toFixed(2)}x</span>
+									</div>
+
+									<div className="flex justify-between">
+										<span className="text-muted-primary">Method:</span>
+										<span className="text-green-300">{rawData.calculation.method}</span>
+									</div>
+								</div>
+							</section>
+						)}
+
 						{/* Live Data Section */}
-						<section>
-							<h3 className="text-sm font-medium text-primary mb-3 uppercase tracking-wide">
-								Live Data {isDemoMode && '(Background)'}
-							</h3>
+						{!isDemo && (
+							<section>
+								<h3 className="text-sm font-medium text-primary mb-3 uppercase tracking-wide">
+									Current Values (Live Data)
+								</h3>
 							
 							{isLoading && (
 								<div className="text-sm text-muted-primary">Loading...</div>
@@ -157,6 +225,7 @@ export const DebugSidebar = ({
 								</div>
 							)}
 						</section>
+					)}
 
 						{/* Demo Controls Section */}
 						<section>
@@ -164,9 +233,9 @@ export const DebugSidebar = ({
 								Demo Controls
 							</h3>
 							
-							{isDemoMode && (
+							{isDemo && (
 								<button
-									onClick={onResetToLiveData}
+									onClick={resetToLive}
 									className="w-full mb-4 px-3 py-2 bg-stone-800 hover:bg-stone-700 border border-stone-600 transition-colors text-sm"
 								>
 									Reset to Live Data
@@ -186,7 +255,7 @@ export const DebugSidebar = ({
 											max="100"
 											step="1"
 											value={currentValue}
-											onChange={(e) => onSliderChange(Number(e.target.value))}
+											onChange={(e) => handleSliderChange(Number(e.target.value))}
 											className="flex-1 h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer slider"
 										/>
 										<span className="text-sm text-primary w-12 text-right">
@@ -202,19 +271,19 @@ export const DebugSidebar = ({
 									</label>
 									<div className="grid grid-cols-3 gap-2">
 										<button
-											onClick={onLowRiskClick}
+											onClick={handleLowRisk}
 											className="px-3 py-2 bg-green-900/30 hover:bg-green-800/40 border border-green-700 transition-colors text-xs"
 										>
 											Low Risk
 										</button>
 										<button
-											onClick={onMediumRiskClick}
+											onClick={handleMediumRisk}
 											className="px-3 py-2 bg-yellow-900/30 hover:bg-yellow-800/40 border border-yellow-700 transition-colors text-xs"
 										>
 											Medium Risk
 										</button>
 										<button
-											onClick={onHighRiskClick}
+											onClick={handleHighRisk}
 											className="px-3 py-2 bg-red-900/30 hover:bg-red-800/40 border border-red-700 transition-colors text-xs"
 										>
 											High Risk

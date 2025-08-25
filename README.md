@@ -175,7 +175,7 @@ MIT License - see LICENSE file for details.
 
 **⚠️ Current Limitations:**
 - Dispute monitoring uses mock data (real event parsing in development)
-- REP price estimation ($10/REP placeholder - price oracle needed)
+- REP price estimation ($1/REP placeholder - price oracle needed)
 - Open interest estimates (Universe contract integration pending)
 - Limited Augur activity on mainnet (most moved to Polygon)
 

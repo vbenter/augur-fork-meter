@@ -77,7 +77,7 @@ const MINIMUM_SECURITY_MULTIPLIER = 3
 const TARGET_SECURITY_MULTIPLIER = 5
 
 // Price estimates (update these periodically or integrate price feeds)
-const ESTIMATED_REP_PRICE_USD = 10 // $10 per REP (conservative estimate as of 2024)
+const ESTIMATED_REP_PRICE_USD = 1 // $1 per REP
 const ESTIMATED_ETH_PRICE_USD = 2500 // $2500 per ETH
 // Note: For production, consider integrating Chainlink or DEX price feeds
 

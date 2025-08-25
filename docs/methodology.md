@@ -129,7 +129,7 @@ Anyone can verify calculations by:
 **✅ Fully Operational**: This version uses verified Augur v2 contract addresses and real blockchain data:
 
 1. **Dispute Monitoring**: Real-time parsing of `DisputeCrowdsourcerCreated` events from Augur contracts
-2. **REP Price Feed**: Using conservative estimate of $10/REP (configurable for different scenarios)
+2. **REP Price Feed**: Using conservative estimate of $1/REP (configurable for different scenarios)
 3. **Open Interest**: Calculated from actual Cash token supply on-chain
 
 ### Known Limitations
