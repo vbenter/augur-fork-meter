@@ -8,7 +8,10 @@
 		"preview": "astro build && wrangler dev",
 		"astro": "astro",
 		"deploy": "astro build && wrangler deploy",
-		"cf-typegen": "wrangler types"
+		"cf-typegen": "wrangler types",
+		"build:fork-data": "node --experimental-strip-types scripts/calculate-fork-risk.ts",
+		"typecheck": "tsc --build",
+		"lint": "npx @biomejs/biome lint"
 	},
 	"dependencies": {
 		"@astrojs/cloudflare": "^12.6.4",
@@ -18,6 +21,7 @@
 		"@types/react-dom": "^19.1.7",
 		"astro": "^5.13.2",
 		"clsx": "^2.1.1",
+		"ethers": "^6.13.4",
 		"react": "^19.1.1",
 		"react-dom": "^19.1.1",
 		"tailwind-merge": "^3.3.1",

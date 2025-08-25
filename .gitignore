@@ -33,3 +33,10 @@ pnpm-debug.log*
 
 # tests
 .playwright-mcp
+
+# Generated data
+public/data/fork-risk.json
+
+# TypeScript cache
+*.tsbuildinfo
+.tscache/

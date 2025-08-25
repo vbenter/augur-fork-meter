@@ -1,6 +1,6 @@
 ---
-import { ForkMeter } from '../components/ForkMeter';
-import '../styles/global.css';
+import { App } from '../components/App'
+import '../styles/global.css'
 ---
 
 <html lang="en">
@@ -16,6 +16,6 @@ import '../styles/global.css';
 		<link href="https://fonts.googleapis.com/css2?family=Handjet:wght@300;400&display=swap" rel="stylesheet">
 	</head>
 	<body>
-		<ForkMeter client:load />
+		<App client:only="react" />
 	</body>
 </html>
