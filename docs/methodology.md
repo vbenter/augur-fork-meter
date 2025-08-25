@@ -134,9 +134,8 @@ Anyone can verify calculations by:
 
 ### Known Limitations
 1. **Limited Augur Activity**: Augur v2 on mainnet has very low activity due to high gas fees
-2. **Augur Turbo Migration**: Most activity moved to Polygon-based Augur Turbo (different architecture)
-3. **Price Data Dependency**: Market cap calculations require external price feeds
-4. **Event Parsing**: Full dispute event monitoring requires additional development
+2. **Price Data Dependency**: Market cap calculations require external price feeds
+3. **Event Parsing**: Full dispute event monitoring requires additional development
 
 ### Timing Considerations
 - **Dispute Windows**: 7 days each, hourly monitoring is sufficient

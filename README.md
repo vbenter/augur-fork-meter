@@ -174,10 +174,10 @@ MIT License - see LICENSE file for details.
 - Proper error handling (no fake data fallbacks)
 
 **⚠️ Current Limitations:**
-- Dispute monitoring uses mock data (real event parsing in development)
+- Dispute monitoring queries real events but lacks full market details
 - REP price estimation ($1/REP placeholder - price oracle needed)
-- Open interest estimates (Universe contract integration pending)
-- Limited Augur activity on mainnet (most moved to Polygon)
+- Open interest calculated from actual Cash token supply on-chain ✓
+- Limited Augur activity on mainnet
 
 ## Disclaimer
 
