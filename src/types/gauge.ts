@@ -16,9 +16,6 @@ export interface ForkRiskData {
 	metrics: {
 		largestDisputeBond: number
 		forkThresholdPercent: number
-		repMarketCap: number
-		openInterest: number
-		securityRatio: number
 		activeDisputes: number
 		disputeDetails: Array<{
 			marketId: string
@@ -38,11 +35,6 @@ export interface ForkRiskData {
 	calculation: {
 		method: string
 		forkThreshold: number
-		securityMultiplier: {
-			current: number
-			minimum: number
-			target: number
-		}
 	}
 	error?: string
 }

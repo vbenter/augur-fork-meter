@@ -38,10 +38,10 @@ npm run build
 - **Git Audit Trail**: All changes tracked in version control
 
 ### Risk Calculation
-- **Dispute Bond Tracking**: Monitors size and escalation of dispute bonds
-- **Security Ratio**: Assesses REP market cap vs open interest ratio  
-- **Fork Threshold**: Calculates percentage of 275,000 REP threshold reached
-- **Multi-factor Analysis**: Combines multiple indicators for overall risk level
+- **Dispute Bond Tracking**: Monitors the size of the largest active dispute bond
+- **Fork Threshold**: Calculates percentage of 275,000 REP fork threshold reached
+- **Simple Formula**: (Largest Dispute Bond / 275,000 REP) × 100 = Risk %
+- **Real-time Assessment**: Direct calculation without complex multi-factor analysis
 
 ### UI Components
 - **Real Data Mode**: Displays actual fork risk from JSON file
@@ -49,7 +49,7 @@ npm run build
 - **Risk Visualization**: SVG gauge display with gradient color-coded risk levels
 - **Debug Sidebar**: Live data display with formatted metrics and demo controls
 - **Top Bar Interface**: Settings/Demo button and demo mode indicator
-- **Detailed Metrics**: Shows active disputes, REP staked, security ratios, RPC info
+- **Detailed Metrics**: Shows active disputes, REP staked, fork threshold percentage, RPC info
 
 ## Documentation
 
@@ -61,10 +61,10 @@ npm run build
 
 | Level | Description | Fork Threshold % | Security Status |
 |-------|-------------|------------------|-----------------|
-| **Low** | Normal operation | <0.5% | Good |
-| **Moderate** | Active disputes | 0.5-2% | Monitoring |
-| **High** | Large disputes | 2-5% | Concern |
-| **Critical** | Fork imminent | >5% | Alert |
+| **Low** | Normal operation | <10% | Good |
+| **Moderate** | Escalating disputes | 10-25% | Monitoring |
+| **High** | Significant risk | 25-75% | Concern |
+| **Critical** | Fork imminent | ≥75% | Alert |
 
 ## Public RPC Endpoints (No API Keys!)
 
@@ -175,8 +175,6 @@ MIT License - see LICENSE file for details.
 
 **⚠️ Current Limitations:**
 - Dispute monitoring queries real events but lacks full market details
-- REP price estimation ($1/REP placeholder - price oracle needed)
-- Open interest calculated from actual Cash token supply on-chain ✓
 - Limited Augur activity on mainnet
 
 ## Disclaimer

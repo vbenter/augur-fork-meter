@@ -6,12 +6,14 @@ import {
 	useCallback,
 } from 'react'
 import { useForkRisk } from './ForkRiskContext'
-import { generateDemoForkRiskData } from '../utils/demoDataGenerator'
+import { generateDemoForkRiskData, DisputeBondScenario } from '../utils/demoDataGenerator'
 import type { ForkRiskData } from '../types/gauge'
 
 interface DemoContextValue {
 	isDemo: boolean
 	generateRisk: (percentage: number) => void
+	generateScenario: (scenario: DisputeBondScenario) => void
+	setDemoData: (data: ForkRiskData) => void
 	resetToLive: () => void
 }
 
@@ -26,8 +28,19 @@ export const DemoProvider = ({ children }: DemoProviderProps): React.JSX.Element
 	const { setData } = useForkRisk()
 
 	const generateRisk = useCallback((percentage: number) => {
-		const generatedData = generateDemoForkRiskData(percentage)
+		const generatedData = generateDemoForkRiskData(DisputeBondScenario.SMALL_BONDS) // Legacy fallback
 		setData(generatedData)
+		setIsDemo(true)
+	}, [setData])
+	
+	const generateScenario = useCallback((scenario: DisputeBondScenario) => {
+		const generatedData = generateDemoForkRiskData(scenario)
+		setData(generatedData)
+		setIsDemo(true)
+	}, [setData])
+	
+	const setDemoData = useCallback((data: ForkRiskData) => {
+		setData(data)
 		setIsDemo(true)
 	}, [setData])
 
@@ -52,6 +65,8 @@ export const DemoProvider = ({ children }: DemoProviderProps): React.JSX.Element
 	const contextValue: DemoContextValue = {
 		isDemo,
 		generateRisk,
+		generateScenario,
+		setDemoData,
 		resetToLive,
 	}
 

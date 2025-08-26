@@ -41,9 +41,6 @@ export const ForkRiskProvider = ({
 		metrics: {
 			largestDisputeBond: 0,
 			forkThresholdPercent: 0,
-			repMarketCap: 11000000,
-			openInterest: 50000000,
-			securityRatio: 3.3,
 			activeDisputes: 0,
 			disputeDetails: [],
 		},
@@ -106,7 +103,7 @@ export const ForkRiskProvider = ({
 	}, [loadForkRiskData, updateInterval, hasHydrated, defaultData])
 
 	const convertToGaugeData = (data: ForkRiskData): GaugeData => ({
-		percentage: data.riskPercentage,
+		percentage: data.riskPercentage, // Pass actual percentage, let GaugeDisplay handle visual scaling
 		repStaked: data.metrics.largestDisputeBond,
 		activeDisputes: data.metrics.activeDisputes,
 	})

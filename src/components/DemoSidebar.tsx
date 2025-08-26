@@ -3,6 +3,13 @@ import { useState } from 'react'
 import { cn } from '../lib/utils'
 import { useForkRisk } from '../contexts/ForkRiskContext'
 import { useDemo } from '../contexts/DemoContext'
+import { 
+	generateNoDisputesDemo,
+	generateLowRiskDemo,
+	generateModerateRiskDemo,
+	generateHighRiskDemo,
+	generateCriticalRiskDemo 
+} from '../utils/demoDataGenerator'
 
 interface DemoSidebarProps {
 	isOpen: boolean
@@ -13,35 +20,41 @@ export const DemoSidebar = ({
 	isOpen,
 	onClose,
 }: DemoSidebarProps): React.JSX.Element => {
-	const [currentValue, setCurrentValue] = useState<number>(0)
+	const [currentScenario, setCurrentScenario] = useState<string>('none')
 	
 	// Get current data and demo controls from contexts
 	const { rawData, lastUpdated, isLoading, error } = useForkRisk()
-	const { isDemo, generateRisk, resetToLive } = useDemo()
+	const { isDemo, setDemoData, resetToLive } = useDemo()
 
-	// Handle slider changes
-	const handleSliderChange = (value: number) => {
-		setCurrentValue(value)
-		generateRisk(value)
+	// Handle risk level scenario buttons
+	const handleNoDisputes = () => {
+		setCurrentScenario('no_disputes')
+		const demoData = generateNoDisputesDemo()
+		setDemoData(demoData)
 	}
 
-	// Handle preset buttons
 	const handleLowRisk = () => {
-		const value = 5
-		setCurrentValue(value)
-		generateRisk(value)
+		setCurrentScenario('low_risk')
+		const demoData = generateLowRiskDemo()
+		setDemoData(demoData)
 	}
 
-	const handleMediumRisk = () => {
-		const value = 35
-		setCurrentValue(value)
-		generateRisk(value)
+	const handleModerateRisk = () => {
+		setCurrentScenario('moderate_risk')
+		const demoData = generateModerateRiskDemo()
+		setDemoData(demoData)
 	}
 
 	const handleHighRisk = () => {
-		const value = 75
-		setCurrentValue(value)
-		generateRisk(value)
+		setCurrentScenario('high_risk')
+		const demoData = generateHighRiskDemo()
+		setDemoData(demoData)
+	}
+
+	const handleCriticalRisk = () => {
+		setCurrentScenario('critical_risk')
+		const demoData = generateCriticalRiskDemo()
+		setDemoData(demoData)
 	}
 
 	const formatCurrency = (amount: number): string => {
@@ -121,18 +134,8 @@ export const DemoSidebar = ({
 									</div>
 									
 									<div className="flex justify-between">
-										<span className="text-muted-primary">REP Market Cap:</span>
-										<span className="text-green-300">{formatCurrency(rawData.metrics.repMarketCap)}</span>
-									</div>
-									
-									<div className="flex justify-between">
-										<span className="text-muted-primary">Open Interest:</span>
-										<span className="text-green-300">{formatCurrency(rawData.metrics.openInterest)}</span>
-									</div>
-									
-									<div className="flex justify-between">
-										<span className="text-muted-primary">Security Ratio:</span>
-										<span className="text-green-300">{rawData.metrics.securityRatio.toFixed(2)}x</span>
+										<span className="text-muted-primary">Fork Threshold %:</span>
+										<span className="text-green-300">{rawData.metrics.forkThresholdPercent}%</span>
 									</div>
 
 									<div className="flex justify-between">
@@ -181,18 +184,8 @@ export const DemoSidebar = ({
 									</div>
 									
 									<div className="flex justify-between">
-										<span className="text-muted-primary">REP Market Cap:</span>
-										<span className="text-primary">{formatCurrency(rawData.metrics.repMarketCap)}</span>
-									</div>
-									
-									<div className="flex justify-between">
-										<span className="text-muted-primary">Open Interest:</span>
-										<span className="text-primary">{formatCurrency(rawData.metrics.openInterest)}</span>
-									</div>
-									
-									<div className="flex justify-between">
-										<span className="text-muted-primary">Security Ratio:</span>
-										<span className="text-primary">{rawData.metrics.securityRatio.toFixed(2)}x</span>
+										<span className="text-muted-primary">Fork Threshold %:</span>
+										<span className="text-primary">{rawData.metrics.forkThresholdPercent}%</span>
 									</div>
 
 									{rawData.rpcInfo && (
@@ -243,50 +236,66 @@ export const DemoSidebar = ({
 							)}
 
 							<div className="space-y-4">
-								{/* Manual Slider */}
+								{/* Risk Level Scenarios */}
 								<div>
 									<label className="block text-xs text-muted-primary mb-2 uppercase tracking-wide">
-										Manual Percentage
+										Risk Level Scenarios
 									</label>
-									<div className="flex items-center gap-3">
-										<input
-											type="range"
-											min="0"
-											max="100"
-											step="1"
-											value={currentValue}
-											onChange={(e) => handleSliderChange(Number(e.target.value))}
-											className="flex-1 h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer slider"
-										/>
-										<span className="text-sm text-primary w-12 text-right">
-											{currentValue}%
-										</span>
-									</div>
-								</div>
-
-								{/* Preset Buttons */}
-								<div>
-									<label className="block text-xs text-muted-primary mb-2 uppercase tracking-wide">
-										Risk Presets
-									</label>
-									<div className="grid grid-cols-3 gap-2">
+									<div className="grid grid-cols-1 gap-2">
 										<button
-											onClick={handleLowRisk}
-											className="px-3 py-2 bg-green-900/30 hover:bg-green-800/40 border border-green-700 transition-colors text-xs"
+											onClick={handleNoDisputes}
+											className={cn(
+												"px-3 py-2 text-xs transition-colors text-left",
+												currentScenario === 'no_disputes'
+													? "bg-green-900/50 border border-green-600 text-green-300"
+													: "bg-green-900/20 hover:bg-green-800/30 border border-green-800 text-green-400"
+											)}
 										>
-											Low Risk
+											No Risk (0 REP disputes)
 										</button>
 										<button
-											onClick={handleMediumRisk}
-											className="px-3 py-2 bg-yellow-900/30 hover:bg-yellow-800/40 border border-yellow-700 transition-colors text-xs"
+											onClick={handleLowRisk}
+											className={cn(
+												"px-3 py-2 text-xs transition-colors text-left",
+												currentScenario === 'low_risk'
+													? "bg-green-900/50 border border-green-600 text-green-300"
+													: "bg-green-900/20 hover:bg-green-800/30 border border-green-800 text-green-400"
+											)}
 										>
-											Medium Risk
+											Low Risk (0.4-10% threshold)
+										</button>
+										<button
+											onClick={handleModerateRisk}
+											className={cn(
+												"px-3 py-2 text-xs transition-colors text-left",
+												currentScenario === 'moderate_risk'
+													? "bg-yellow-900/50 border border-yellow-600 text-yellow-300"
+													: "bg-yellow-900/20 hover:bg-yellow-800/30 border border-yellow-800 text-yellow-400"
+											)}
+										>
+											Moderate Risk (10-25% threshold)
 										</button>
 										<button
 											onClick={handleHighRisk}
-											className="px-3 py-2 bg-red-900/30 hover:bg-red-800/40 border border-red-700 transition-colors text-xs"
+											className={cn(
+												"px-3 py-2 text-xs transition-colors text-left",
+												currentScenario === 'high_risk'
+													? "bg-orange-900/50 border border-orange-600 text-orange-300"
+													: "bg-orange-900/20 hover:bg-orange-800/30 border border-orange-800 text-orange-400"
+											)}
 										>
-											High Risk
+											High Risk (25-75% threshold)
+										</button>
+										<button
+											onClick={handleCriticalRisk}
+											className={cn(
+												"px-3 py-2 text-xs transition-colors text-left",
+												currentScenario === 'critical_risk'
+													? "bg-red-900/50 border border-red-600 text-red-300"
+													: "bg-red-900/20 hover:bg-red-800/30 border border-red-800 text-red-400"
+											)}
+										>
+											Critical Risk (75%+ threshold)
 										</button>
 									</div>
 								</div>

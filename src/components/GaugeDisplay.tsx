@@ -5,10 +5,33 @@ import type { GaugeDisplayProps } from '../types/gauge'
 export const GaugeDisplay = ({
 	percentage,
 }: GaugeDisplayProps): React.JSX.Element => {
-	const updateArc = (percentage: number): string => {
-		// Calculate the end point of the arc based on percentage
+	/**
+	 * Convert fork threshold percentage to visual gauge percentage
+	 * Maps the actual risk to intuitive visual representation
+	 */
+	const getVisualPercentage = (forkThresholdPercent: number): number => {
+		if (forkThresholdPercent <= 10) {
+			// 0-10% fork threshold = 0-25% gauge (Low risk zone)
+			return (forkThresholdPercent / 10) * 25
+		} else if (forkThresholdPercent <= 25) {
+			// 10-25% fork threshold = 25-50% gauge (Moderate risk zone)
+			return 25 + ((forkThresholdPercent - 10) / 15) * 25
+		} else if (forkThresholdPercent <= 75) {
+			// 25-75% fork threshold = 50-90% gauge (High risk zone)
+			return 50 + ((forkThresholdPercent - 25) / 50) * 40
+		} else {
+			// 75%+ fork threshold = 90-100% gauge (Critical risk zone)
+			return Math.min(100, 90 + ((forkThresholdPercent - 75) / 25) * 10)
+		}
+	}
+
+	const updateArc = (actualPercentage: number): string => {
+		// Use visual percentage for arc display
+		const visualPercentage = getVisualPercentage(actualPercentage)
+		
+		// Calculate the end point of the arc based on visual percentage
 		// Map percentage to angle from 180° to 0° (π to 0 radians)
-		const angle = Math.PI - (percentage / 100) * Math.PI
+		const angle = Math.PI - (visualPercentage / 100) * Math.PI
 		const centerX = 200
 		const centerY = 200
 		const radius = 120
@@ -18,7 +41,7 @@ export const GaugeDisplay = ({
 		const endY = centerY - radius * Math.sin(angle)
 
 		// Create arc path with gradient
-		if (percentage === 0) {
+		if (visualPercentage === 0) {
 			return 'M 80 200'
 		} else {
 			// Always use sweep-flag = 1 for clockwise direction
@@ -26,12 +49,22 @@ export const GaugeDisplay = ({
 		}
 	}
 
-	const formatPercentage = (percentage: number): string => {
-		return `${percentage % 1 === 0 ? percentage.toFixed(0) : percentage.toFixed(1)}%`
+	const getRiskLevel = (forkThresholdPercent: number): string => {
+		if (forkThresholdPercent < 10) return 'LOW'
+		if (forkThresholdPercent < 25) return 'MODERATE'
+		if (forkThresholdPercent < 75) return 'HIGH'
+		return 'CRITICAL'
+	}
+
+	const getRiskColor = (forkThresholdPercent: number): string => {
+		if (forkThresholdPercent < 10) return 'var(--gauge-color-safe)'
+		if (forkThresholdPercent < 25) return 'var(--gauge-color-warning)'
+		if (forkThresholdPercent < 75) return 'var(--gauge-color-danger)'
+		return 'var(--gauge-color-critical)'
 	}
 
 	return (
-		<div className={cn('relative mb-10 flex flex-col gap-y-1 items-center')}>
+		<div className={cn('relative mb-4 flex flex-col gap-y-1 items-center')}>
 			<svg className="max-w-[200px] w-full" viewBox="60 60 280 160">
 				<defs>
 					<linearGradient
@@ -100,21 +133,21 @@ export const GaugeDisplay = ({
 					}}
 				/>
 
-				{/* Percentage value at baseline of arc */}
+				{/* Risk level text at baseline of arc */}
 				<text
 					x="200"
 					y="195"
 					textAnchor="middle"
-					fill="var(--color-primary)"
-					fontSize="4.25em"
+					fill={getRiskColor(percentage)}
+					fontSize="3em"
 					fontWeight="bold"
 				>
-					{formatPercentage(percentage)}
+					{getRiskLevel(percentage)}
 				</text>
 			</svg>
 
 			<div className="text-xl uppercase tracking-[0.2em] font-light text-muted-primary">
-				FORK PRESSURE
+				FORK RISK LEVEL
 			</div>
 		</div>
 	)

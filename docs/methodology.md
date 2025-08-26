@@ -14,65 +14,55 @@ Based on the Augur v2 whitepaper, forks are triggered when:
 
 ## Risk Calculation Framework
 
-### Primary Risk Indicators
+### Simplified Risk Assessment
 
-#### 1. Dispute Bond Size Analysis
-- **Current Dispute Bonds**: Track all active dispute bonds across markets
-- **Escalation Patterns**: Monitor how dispute bonds grow through successive rounds
-- **Fork Threshold Progress**: Calculate percentage of 275,000 REP threshold reached
+The Augur Fork Meter uses a direct, transparent calculation based solely on dispute bond size relative to the fork threshold:
 
-**Formula**: `Fork Threshold % = (Largest Dispute Bond / 275,000) * 100`
+#### Core Calculation
+- **Dispute Bond Monitoring**: Track the largest active dispute bond across all markets
+- **Fork Threshold**: 275,000 REP (2.5% of theoretical 11 million REP supply)
+- **Risk Percentage**: Direct calculation of how close the largest dispute is to triggering a fork
 
-#### 2. Security Ratio Assessment
-- **REP Market Cap**: Current market value of all REP tokens
-- **Open Interest**: Total DAI locked in non-finalized markets
-- **Security Multiplier**: Ratio of market cap to open interest
+**Primary Formula**: `Risk % = (Largest Dispute Bond / 275,000 REP) × 100`
 
-**Formula**: `Security Ratio = REP Market Cap / Native Open Interest`
-
-**Targets**:
-- Minimum safe ratio: 3x
-- Target ratio: 5x
-
-#### 3. Dispute Activity Metrics
+#### Supplementary Information
 - **Active Markets**: Number of markets currently in dispute
-- **Dispute Round Depth**: How many escalation rounds have occurred
+- **Dispute Round Depth**: Current escalation level of active disputes
 - **Time Analysis**: Days remaining in dispute windows
 
 ### Risk Level Determination
 
-The system assigns risk levels based on combined analysis:
+The system assigns risk levels based directly on the fork threshold percentage:
 
-#### Base Risk from Dispute Bond Size
+#### Risk Level Assignment
 ```
-if dispute_bond_percent < 0.5%:   BASE_RISK = LOW
-if dispute_bond_percent < 2.0%:   BASE_RISK = MODERATE  
-if dispute_bond_percent < 5.0%:   BASE_RISK = HIGH
-if dispute_bond_percent >= 5.0%:  BASE_RISK = CRITICAL
-```
-
-#### Security Ratio Adjustment
-If the security ratio falls below the minimum threshold (3x), risk is amplified:
-```
-if security_ratio < 3.0:
-    adjusted_risk = base_risk * (3.0 / security_ratio)
+if risk_percentage < 10%:    RISK_LEVEL = LOW
+if risk_percentage < 25%:    RISK_LEVEL = MODERATE  
+if risk_percentage < 75%:    RISK_LEVEL = HIGH
+if risk_percentage >= 75%:   RISK_LEVEL = CRITICAL
 ```
 
-#### Final Risk Percentage Calculation
-```
-Base Risk Score = min(50, (dispute_bond_percent / 10) * 50)
-Security Risk Score = max(0, (5 - security_ratio) / 5 * 50) 
-Final Risk Percentage = Base Risk Score + Security Risk Score
-```
+This direct mapping provides clear, understandable risk assessment without complex multi-factor adjustments.
+
+#### Threshold Rationale
+
+The thresholds have been calibrated to provide meaningful risk signals:
+
+- **Critical (≥75%)**: Fork is truly imminent - dispute bonds are close to the 275,000 REP trigger point
+- **High (25-75%)**: Substantial dispute activity that warrants attention but fork is not immediate
+- **Moderate (10-25%)**: Notable dispute activity above normal background levels
+- **Low (<10%)**: Normal operation with minimal dispute risk
+
+These thresholds replace previously conservative levels that would have triggered frequent false alarms during normal dispute resolution. The new levels focus attention on disputes that pose genuine systemic risk to the Augur oracle.
 
 ### Risk Levels
 
-| Level | Range | Description | Color |
-|-------|--------|-------------|--------|
-| **Low** | 0-25% | Normal operation, small or no disputes | Green |
-| **Moderate** | 26-50% | Active disputes but manageable size | Yellow |
-| **High** | 51-75% | Large disputes approaching concern levels | Orange |
-| **Critical** | 76-100% | Very large disputes, fork risk imminent | Red (pulsing) |
+| Level | Fork Threshold % | Description | Color |
+|-------|------------------|-------------|--------|
+| **Low** | <10% | Normal operation, typical dispute activity | Green |
+| **Moderate** | 10-25% | Elevated dispute activity above baseline | Yellow |
+| **High** | 25-75% | Large disputes requiring close monitoring | Orange |
+| **Critical** | ≥75% | Fork trigger imminent, dispute near 275K REP | Red (pulsing) |
 
 ## Data Sources and Architecture
 
@@ -129,13 +119,11 @@ Anyone can verify calculations by:
 **✅ Fully Operational**: This version uses verified Augur v2 contract addresses and real blockchain data:
 
 1. **Dispute Monitoring**: Real-time parsing of `DisputeCrowdsourcerCreated` events from Augur contracts
-2. **REP Price Feed**: Using conservative estimate of $1/REP (configurable for different scenarios)
-3. **Open Interest**: Calculated from actual Cash token supply on-chain
+2. **Fork Threshold Calculation**: Direct comparison against the 275,000 REP threshold
 
 ### Known Limitations
 1. **Limited Augur Activity**: Augur v2 on mainnet has very low activity due to high gas fees
-2. **Price Data Dependency**: Market cap calculations require external price feeds
-3. **Event Parsing**: Full dispute event monitoring requires additional development
+2. **Event Parsing**: Full dispute event monitoring requires additional development
 
 ### Timing Considerations
 - **Dispute Windows**: 7 days each, hourly monitoring is sufficient

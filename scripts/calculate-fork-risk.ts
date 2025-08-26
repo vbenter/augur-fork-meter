@@ -4,9 +4,7 @@
  * Augur Fork Risk Calculator
  *
  * This script calculates the current risk of an Augur fork based on:
- * - Active dispute bonds and their sizes
- * - REP market cap vs open interest ratio
- * - Dispute escalation patterns
+ * - Active dispute bonds and their sizes relative to fork threshold
  *
  * Results are saved to public/data/fork-risk.json for the UI to consume.
  * All calculations are transparent and auditable.
@@ -38,23 +36,13 @@ interface RpcInfo {
 interface Metrics {
 	largestDisputeBond: number
 	forkThresholdPercent: number
-	repMarketCap: number
-	openInterest: number
-	securityRatio: number
 	activeDisputes: number
 	disputeDetails: DisputeDetails[]
-}
-
-interface SecurityMultiplier {
-	current: number
-	minimum: number
-	target: number
 }
 
 interface Calculation {
 	method: string
 	forkThreshold: number
-	securityMultiplier: SecurityMultiplier
 }
 
 interface ForkRiskData {
@@ -73,13 +61,6 @@ type RiskLevel = 'low' | 'moderate' | 'high' | 'critical'
 
 // Configuration
 const FORK_THRESHOLD_REP = 275000 // 2.5% of 11 million REP
-const MINIMUM_SECURITY_MULTIPLIER = 3
-const TARGET_SECURITY_MULTIPLIER = 5
-
-// Price estimates (update these periodically or integrate price feeds)
-const ESTIMATED_REP_PRICE_USD = 1 // $1 per REP
-const ESTIMATED_ETH_PRICE_USD = 2500 // $2500 per ETH
-// Note: For production, consider integrating Chainlink or DEX price feeds
 
 // Public RPC endpoints (no API keys required!)
 const PUBLIC_RPC_ENDPOINTS = [
@@ -98,10 +79,10 @@ interface RpcConnection {
 
 // Risk level thresholds (percentage of fork threshold)
 const RISK_LEVELS = {
-	LOW: 0.5, // <0.5% of fork threshold
-	MODERATE: 2.0, // 0.5-2% of threshold
-	HIGH: 5.0, // 2-5% of threshold
-	CRITICAL: 10.0, // >5% of threshold (anything over 10% is imminent)
+	LOW: 10, // <10% of fork threshold
+	MODERATE: 25, // 10-25% of threshold
+	HIGH: 75, // 25-75% of threshold
+	CRITICAL: 75, // >75% of threshold
 }
 
 async function getWorkingProvider(): Promise<RpcConnection> {
@@ -197,24 +178,12 @@ async function calculateForkRisk(): Promise<ForkRiskData> {
 		// Calculate key metrics
 		const activeDisputes = await getActiveDisputes(connection.provider, contracts)
 		const largestDisputeBond = getLargestDisputeBond(activeDisputes)
-		const repMarketCap = await getRepMarketCap(contracts)
-		const openInterest = await getOpenInterest(contracts)
-		const securityRatio = calculateSecurityRatio(
-			repMarketCap,
-			openInterest,
-		)
 
 		// Calculate risk level
 		const forkThresholdPercent =
 			(largestDisputeBond / FORK_THRESHOLD_REP) * 100
-		const riskLevel = determineRiskLevel(
-			forkThresholdPercent,
-			securityRatio,
-		)
-		const riskPercentage = calculateRiskPercentage(
-			forkThresholdPercent,
-			securityRatio,
-		)
+		const riskLevel = determineRiskLevel(forkThresholdPercent)
+		const riskPercentage = forkThresholdPercent
 
 		// Prepare results
 		const results: ForkRiskData = {
@@ -225,9 +194,6 @@ async function calculateForkRisk(): Promise<ForkRiskData> {
 			metrics: {
 				largestDisputeBond,
 				forkThresholdPercent: Math.round(forkThresholdPercent * 100) / 100,
-				repMarketCap,
-				openInterest,
-				securityRatio: Math.round(securityRatio * 100) / 100,
 				activeDisputes: activeDisputes.length,
 				disputeDetails: activeDisputes.slice(0, 5), // Top 5 disputes
 			},
@@ -240,11 +206,6 @@ async function calculateForkRisk(): Promise<ForkRiskData> {
 			calculation: {
 				method: 'GitHub Actions + Public RPC',
 				forkThreshold: FORK_THRESHOLD_REP,
-				securityMultiplier: {
-					current: securityRatio,
-					minimum: MINIMUM_SECURITY_MULTIPLIER,
-					target: TARGET_SECURITY_MULTIPLIER,
-				},
 			},
 		}
 
@@ -420,105 +381,16 @@ function getLargestDisputeBond(disputes: DisputeDetails[]): number {
 	return Math.max(...disputes.map((d) => d.disputeBondSize))
 }
 
-async function getRepMarketCap(contracts: Record<string, ethers.Contract>): Promise<number> {
-	try {
-		// Get REP total supply from the REP token contract (more reliable than Universe method)
-		const totalSupply = await contracts.repV2Token.totalSupply()
-		const totalSupplyNumber = Number(ethers.formatEther(totalSupply))
 
-		const marketCapUsd = ESTIMATED_REP_PRICE_USD * totalSupplyNumber
 
-		console.log(`REP Total Supply: ${totalSupplyNumber.toLocaleString()} REP`)
-		console.log(
-			`REP Market Cap: $${marketCapUsd.toLocaleString()} USD (at $${ESTIMATED_REP_PRICE_USD}/REP estimated)`,
-		)
 
-		return marketCapUsd
-	} catch (error) {
-		console.warn(
-			'Failed to get REP total supply:',
-			error instanceof Error ? error.message : String(error),
-		)
-		// Fallback: 11M REP * price
-		const fallbackSupply = 11000000 // 11M REP fallback
-		const fallbackMarketCap = fallbackSupply * ESTIMATED_REP_PRICE_USD
-		console.log(
-			`Using fallback: ${fallbackSupply.toLocaleString()} REP × $${ESTIMATED_REP_PRICE_USD} = $${fallbackMarketCap.toLocaleString()}`,
-		)
-			return fallbackMarketCap
-		}
-	}
-
-async function getOpenInterest(contracts: Record<string, ethers.Contract>): Promise<number> {
-	try {
-		// Get total cash supply as proxy for open interest
-		// In Augur, cash tokens represent collateral locked in markets
-		const totalSupply = await contracts.cash.totalSupply()
-		const totalSupplyNumber = Number(ethers.formatEther(totalSupply))
-		const openInterestUsd = totalSupplyNumber * ESTIMATED_ETH_PRICE_USD
-
-		console.log(
-			`Cash Token Supply (Open Interest): ${totalSupplyNumber.toLocaleString()} ETH`,
-		)
-		console.log(
-			`Estimated Open Interest: $${openInterestUsd.toLocaleString()} USD`,
-		)
-
-		return openInterestUsd
-	} catch (error) {
-		console.warn(
-			'Failed to get open interest:',
-			error instanceof Error ? error.message : String(error),
-		)
-		// Fallback estimate based on typical Augur usage
-		const fallbackOpenInterest = 1000000 // $1M fallback
-		console.log(`Using fallback open interest: $${fallbackOpenInterest}`)
-		return fallbackOpenInterest
-	}
-}
-
-function calculateSecurityRatio(marketCap: number, openInterest: number): number {
-	return marketCap / openInterest
-}
-
-function determineRiskLevel(
-	forkThresholdPercent: number,
-	securityRatio: number,
-): RiskLevel {
-	// Adjust risk based on security ratio
-	let adjustedThresholdPercent = forkThresholdPercent
-
-	// If security ratio is below minimum, increase perceived risk
-	if (securityRatio < MINIMUM_SECURITY_MULTIPLIER) {
-		adjustedThresholdPercent *= MINIMUM_SECURITY_MULTIPLIER / securityRatio
-	}
-
-	if (adjustedThresholdPercent >= RISK_LEVELS.CRITICAL) return 'critical'
-	if (adjustedThresholdPercent >= RISK_LEVELS.HIGH) return 'high'
-	if (adjustedThresholdPercent >= RISK_LEVELS.MODERATE) return 'moderate'
+function determineRiskLevel(forkThresholdPercent: number): RiskLevel {
+	if (forkThresholdPercent > RISK_LEVELS.CRITICAL) return 'critical'
+	if (forkThresholdPercent >= RISK_LEVELS.HIGH) return 'high'
+	if (forkThresholdPercent >= RISK_LEVELS.MODERATE) return 'moderate'
 	return 'low'
 }
 
-function calculateRiskPercentage(
-	forkThresholdPercent: number,
-	securityRatio: number,
-): number {
-	// Base risk from dispute bond size (0-50%)
-	const baseRisk = Math.min(50, (forkThresholdPercent / 10) * 50)
-
-	// Additional risk from poor security ratio (0-50%)
-	let securityRisk = 0
-	if (securityRatio < TARGET_SECURITY_MULTIPLIER) {
-		securityRisk = Math.max(
-			0,
-			((TARGET_SECURITY_MULTIPLIER - securityRatio) /
-				TARGET_SECURITY_MULTIPLIER) *
-				50,
-		)
-	}
-
-	return Math.round(baseRisk + securityRisk)
-}
 
 function getForkingResult(timestamp: string, blockNumber: number, connection: RpcConnection): ForkRiskData {
 		return {
@@ -529,9 +401,6 @@ function getForkingResult(timestamp: string, blockNumber: number, connection: Rp
 			metrics: {
 				largestDisputeBond: FORK_THRESHOLD_REP, // Fork threshold was reached
 				forkThresholdPercent: 100,
-				repMarketCap: 0, // Will be calculated separately if needed
-				openInterest: 0, // Will be calculated separately if needed
-				securityRatio: 0,
 				activeDisputes: 0,
 				disputeDetails: [
 					{
@@ -552,11 +421,6 @@ function getForkingResult(timestamp: string, blockNumber: number, connection: Rp
 			calculation: {
 				method: 'Fork Detected',
 				forkThreshold: FORK_THRESHOLD_REP,
-				securityMultiplier: {
-					current: 0,
-					minimum: MINIMUM_SECURITY_MULTIPLIER,
-					target: TARGET_SECURITY_MULTIPLIER,
-				},
 			},
 		}
 	}
@@ -570,9 +434,6 @@ function getErrorResult(errorMessage: string): ForkRiskData {
 			metrics: {
 				largestDisputeBond: 0,
 				forkThresholdPercent: 0,
-				repMarketCap: 0,
-				openInterest: 0,
-				securityRatio: 0,
 				activeDisputes: 0,
 				disputeDetails: [],
 			},
@@ -585,11 +446,6 @@ function getErrorResult(errorMessage: string): ForkRiskData {
 			calculation: {
 				method: 'Error',
 				forkThreshold: FORK_THRESHOLD_REP,
-				securityMultiplier: {
-					current: 0,
-					minimum: MINIMUM_SECURITY_MULTIPLIER,
-					target: TARGET_SECURITY_MULTIPLIER,
-				},
 			},
 		}
 	}

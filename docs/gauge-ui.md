@@ -1,12 +1,12 @@
 # Fork Meter UI Components
 
-This document describes the React/TypeScript implementation of the Augur Fork Meter's user interface components.
+This document describes the React/TypeScript implementation of the Augur Fork Meter's simplified user interface components.
 
 ## Architecture Overview
 
 The UI is built with:
 - **React 19** with TypeScript
-- **Astro** for static site generation
+- **Vite** for build tooling
 - **Tailwind CSS** for styling
 - **SVG** for gauge visualization
 - **Context API** for state management
@@ -15,144 +15,194 @@ The UI is built with:
 
 ```
 App (Provider Wrapper)
-└── ForkMeter (Main Container)
-    ├── Top Bar (Fixed Position)
-    │   ├── Demo Mode Indicator
-    │   ├── Settings/Demo Button
-    │   └── Reset Button (Demo Only)
-    ├── Main Content
-    │   ├── Title & Subtitle
-    │   ├── GaugeDisplay (SVG Visualization)
-    │   ├── DataPanels (Risk Level & Metrics)
-    │   └── Last Updated Info
-    └── DebugSidebar (Overlay)
-        ├── Live Data Section
-        └── Demo Controls Section
+├── ForkRiskProvider (Data Context)
+└── DemoProvider (Demo State Context)
+    └── DemoOverlay (Top Bar & Sidebar Management)
+        ├── Fixed Top Bar
+        │   ├── Demo Mode Indicator (when active)
+        │   ├── Demo/Settings Button
+        │   └── Reset Button (demo mode only)
+        ├── ForkMeter (Main Content)
+        │   ├── Title & Subtitle
+        │   ├── GaugeDisplay (SVG Risk Level Visualization)
+        │   ├── DataPanels (Progressive Disclosure)
+        │   └── Last Updated Info
+        └── DemoSidebar (Slide-out Panel)
+            ├── Current Values Display
+            └── Risk Scenario Controls
 ```
 
 ## Core Components
 
-### 1. ForkMeter.tsx
-Main container component that orchestrates the entire interface.
+### 1. App.tsx
+Root application component providing context providers.
 
 **Features:**
-- Fixed top bar with demo mode status and controls
-- State management for demo vs live data
-- Layout coordination between main content and debug sidebar
+- Wraps entire app with ForkRiskProvider and DemoProvider
+- Simple composition pattern for clean separation of concerns
+
+### 2. DemoOverlay.tsx
+Wrapper component managing demo state and top bar UI.
+
+**Features:**
+- Fixed top bar with conditional visibility based on demo state
+- Demo mode indicator and control buttons
+- Sidebar state management (open/close)
+- Progressive enhancement: transparent in live mode, visible in demo mode
 
 **Key State:**
-- `isDemoMode`: Boolean flag for demo/live state
-- `isDebugOpen`: Controls debug sidebar visibility
-- `demoData`: Simulated data when in demo mode
+- `isDebugOpen`: Controls sidebar visibility
+- Uses demo context for demo state and reset functionality
 
-### 2. GaugeDisplay.tsx
-SVG-based semicircular gauge for risk visualization.
+### 3. ForkMeter.tsx
+Main content container displaying the core fork meter interface.
 
 **Features:**
-- Dynamic arc rendering based on percentage (0-100%)
-- Gradient color mapping from green (safe) to red (critical)
-- Smooth CSS transitions for value changes
+- Error and loading state display
+- Orchestrates gauge and data panels
+
+### 4. GaugeDisplay.tsx
+SVG-based semicircular gauge showing fork risk level.
+
+**Features:**
+- Visual percentage scaling for intuitive display (non-linear mapping)
+- Risk level text display (LOW/MODERATE/HIGH/CRITICAL) with dynamic coloring
+- Smooth gradient arc from green to red
 - Responsive design with viewBox scaling
 
 **Visual Elements:**
 - Background track (full semicircle)
-- Colored progress arc with gradient
-- Large percentage text display
-- "FORK PRESSURE" label
+- Colored progress arc with gradient (url(#pathGradient))
+- Large risk level text (uppercase) with dynamic colors
+- "FORK RISK LEVEL" subtitle
 
-### 3. DebugSidebar.tsx
-Slide-out panel with live data display and demo controls.
+**Key Functions:**
+- `getVisualPercentage()`: Maps actual percentages to gauge fill levels
+  - 0-10% → 0-25% gauge fill
+  - 10-25% → 25-50% gauge fill
+  - 25-75% → 50-90% gauge fill
+  - 75%+ → 90-100% gauge fill
+- `getRiskLevel()`: Determines text based on thresholds (10%, 25%, 75%)
+- `getRiskColor()`: Returns CSS custom property for dynamic coloring
+
+### 5. DemoSidebar.tsx
+Slide-out panel with data inspection and demo controls.
 
 **Features:**
-- **Live Data Section**: Formatted display of real fork risk metrics
-- **Demo Controls Section**: Interactive controls for testing scenarios
+- **Current Values Section**: Shows active data (live or demo)
+- **Demo Controls Section**: Risk scenario buttons for testing
 - Mobile-responsive width (full width on mobile, fixed width on desktop)
 - Backdrop overlay with click-to-close functionality
 
 **Live Data Display:**
 - Risk Level & Percentage
-- Active Disputes with details
-- REP Market Cap (formatted currency)
-- Open Interest (formatted currency)
-- Security Ratio (with decimal precision)
+- Active Disputes count
+- Largest Dispute Bond (REP)
+- Fork Threshold Percentage
 - RPC Endpoint & Latency
 - Block Number
 - Last Updated timestamp
 
 **Demo Controls:**
-- Manual percentage slider (0-100%)
-- Risk preset buttons (Low/Medium/High)
+- Risk scenario buttons:
+  - No Risk (0 REP disputes)
+  - Low Risk (0.4-10% threshold)
+  - Moderate Risk (10-25% threshold) 
+  - High Risk (25-75% threshold)
+  - Critical Risk (75%+ threshold)
 - Reset to Live Data button (when in demo mode)
+- Color-coded buttons matching risk levels
 
-### 4. DataPanels.tsx
-Three-column display of key metrics below the gauge.
+### 6. DataPanels.tsx
+Progressive disclosure panel showing detailed metrics when needed.
 
-**Displays:**
-- **Fork Risk Level**: Low/Medium/High/Critical with color coding
-- **REP Staked in Disputes**: Formatted number with "REP" suffix
-- **Active Disputes**: Count of current dispute activity
+**Progressive Disclosure Logic:**
+- **Stable State (no disputes)**: Shows "✓ All markets are stable" message
+- **Active Disputes**: Shows three-column layout with metrics
 
-### 5. RiskBadge.tsx
-Color-coded risk level indicator with dynamic styling.
+**Active Dispute Display:**
+- **Dispute Bond**: Largest active dispute bond in REP
+- **Threshold**: Percentage of 275,000 REP fork threshold
+- **Dispute Round**: Current escalation level of largest dispute
 
-**Risk Levels:**
-- **Low**: Green background
-- **Medium**: Yellow background
-- **High**: Orange background
-- **Critical**: Red background (with pulsing animation)
+**Features:**
+- Clean, centered layout with divider pipes
+- Formatted numbers with locale-specific separators
+- Uppercase labels with tracking for consistent typography
+- Conditional rendering based on dispute activity
 
 ## State Management
 
 ### ForkRiskContext.tsx
-React Context providing fork risk data throughout the component tree.
+React Context providing simplified fork risk data.
 
 **Provides:**
-- `gaugeData`: Processed data for gauge display
-- `riskLevel`: Current risk level assessment
+- `gaugeData`: Processed data containing percentage for gauge
+- `riskLevel`: Current risk level (for compatibility)
 - `lastUpdated`: Formatted timestamp
 - `isLoading`: Loading state
 - `error`: Error message if data fetch fails
-- `rawData`: Complete JSON data from API
-- `refetch`: Function to manually refresh data
+- `rawData`: Complete JSON data with dispute metrics
 
 **Data Flow:**
 1. Context fetches from `/data/fork-risk.json` on mount
-2. Data is processed and formatted for UI consumption
+2. Single metric calculation: largest dispute bond / 275,000 REP
 3. Auto-refresh every 5 minutes
-4. Fallback to default data if fetch fails
+4. Fallback to demo data if fetch fails
+
+### DemoContext.tsx
+React Context managing demo mode state and data override.
+
+**Provides:**
+- `isDemo`: Boolean flag for demo/live state
+- `setDemoData`: Function to override data with demo scenarios
+- `resetToLive`: Function to return to live data
+
+**Demo Data Generation:**
+- Uses `demoDataGenerator.ts` utility functions
+- Generates realistic dispute bond scenarios
+- Maintains consistent risk level calculations
 
 ## Styling System
 
 ### Tailwind Configuration
-- **Custom Colors**: Primary green theme with variants
-- **Typography**: Handjet font for retro terminal aesthetic
+- **Custom Colors**: Primary green theme with risk level variants
+- **Typography**: System fonts with letter spacing for technical aesthetic
 - **Responsive Design**: Mobile-first approach
-- **Dark Theme**: Stone/slate color palette
+- **Dark Theme**: Stone color palette for professional look
 
 ### CSS Custom Properties
 Used for gauge visualization:
 ```css
---gauge-color-safe: #10b981
---gauge-color-safe-mid: #eab308
---gauge-color-warning: #f59e0b
---gauge-color-danger: #ef4444
---gauge-color-critical: #dc2626
+--gauge-color-safe: #10b981     /* Green for LOW */
+--gauge-color-safe-mid: #eab308  /* Green-yellow transition */
+--gauge-color-warning: #f59e0b   /* Yellow for MODERATE */
+--gauge-color-danger: #ef4444    /* Orange for HIGH */
+--gauge-color-critical: #dc2626  /* Red for CRITICAL */
 ```
+
+### Risk Level Color Mapping
+- **LOW**: `var(--gauge-color-safe)` - Green
+- **MODERATE**: `var(--gauge-color-warning)` - Yellow  
+- **HIGH**: `var(--gauge-color-danger)` - Orange
+- **CRITICAL**: `var(--gauge-color-critical)` - Red
 
 ## Interface Modes
 
 ### Live Data Mode (Default)
 - Displays real blockchain data from `fork-risk.json`
-- Top bar nearly invisible (transparent background)
-- "Demo" button available in top-right (subtle styling)
-- Main content shows actual risk metrics
+- Top bar transparent background
+- "Demo" button in top-right with subtle border styling
+- Shows actual dispute bond calculations
+- DataPanels show "All markets are stable" when no disputes active
 
 ### Demo Mode
-- Activated via debug controls or demo presets
-- Top bar becomes visible with green background
-- "Demo Mode" text appears on left
+- Activated via sidebar risk scenario buttons
+- Top bar becomes visible with white/5% background
+- "Demo Mode" text appears on left in green
 - "Settings" and "Reset" buttons on right
-- Main content shows simulated data
+- DataPanels show simulated dispute data
+- Sidebar shows current demo values in green-tinted section
 
 ## Responsive Design
 
@@ -169,59 +219,63 @@ Used for gauge visualization:
 
 ## Data Processing
 
-### Risk Level Calculation
+### Simplified Risk Calculation
 ```typescript
-// Convert backend risk levels to display format
-const convertToRiskLevel = (data: ForkRiskData): RiskLevel => {
-  switch (data.riskLevel) {
-    case 'low': return { level: 'Low' }
-    case 'moderate': return { level: 'Medium' }  
-    case 'high': return { level: 'High' }
-    case 'critical': return { level: 'Critical' }
-    default: return { level: 'Low' }
-  }
-}
+// Single metric: dispute bond vs fork threshold
+const forkThresholdPercent = (largestDisputeBond / 275000) * 100
+
+// Risk level determination with realistic thresholds
+if (forkThresholdPercent < 10) return 'LOW'
+if (forkThresholdPercent < 25) return 'MODERATE'  
+if (forkThresholdPercent < 75) return 'HIGH'
+return 'CRITICAL'
 ```
 
+### Risk Level Thresholds
+- **LOW**: <10% of fork threshold (normal operation)
+- **MODERATE**: 10-25% (elevated dispute activity)
+- **HIGH**: 25-75% (significant disputes requiring monitoring)
+- **CRITICAL**: ≥75% (fork trigger imminent)
+
 ### Number Formatting
-- **Currency**: `Intl.NumberFormat` with USD formatting
-- **Large Numbers**: Comma-separated thousands
-- **Percentages**: Dynamic decimal places based on precision needed
-- **Timestamps**: Localized date/time display
+- **Large Numbers**: `toLocaleString()` for comma separators
+- **Percentages**: `toFixed(1)` for single decimal precision
+- **REP Amounts**: Formatted with "REP" suffix
+- **Timestamps**: Context-provided formatted strings
 
 ## Performance Considerations
 
 ### Optimization Features
 - React Context prevents prop drilling
-- Memoized callback functions to prevent re-renders
-- Efficient SVG rendering with minimal DOM updates
-- CSS transitions for smooth animations
-- Lazy loading of debug sidebar content
+- Memoized callbacks in DemoOverlay to prevent re-renders
+- Efficient SVG rendering with path updates only when needed
+- CSS transitions for smooth gauge animations
+- Conditional rendering in DataPanels (progressive disclosure)
 
 ### Update Strategy
-- Data fetching only when component mounts or manually triggered
-- Local state updates for demo mode (no API calls)
-- Debounced slider updates to prevent excessive re-renders
+- Data fetching only when component mounts or manually refreshed
+- Demo mode uses local state overrides (no API calls)
+- Single calculation per update (dispute bond / threshold)
+- Minimal re-renders due to simplified state structure
 
-## Accessibility
+## Key Implementation Details
 
-### Features Implemented
-- Proper ARIA labels for interactive elements
-- Keyboard navigation support
-- Screen reader friendly text alternatives
-- High contrast color schemes
-- Focus indicators on interactive elements
+### Visual Percentage Scaling
+The gauge uses non-linear visual scaling to provide intuitive feedback:
+- Actual 5% risk → 25% gauge fill (more visible than linear)
+- Actual 25% risk → 50% gauge fill (clear moderate warning)
+- Actual 75% risk → 90% gauge fill (obvious critical state)
 
-## Future Enhancements
+This prevents the gauge from appearing "empty" during normal operation while maintaining accuracy.
 
-### Planned Improvements
-- Real-time WebSocket data updates
-- Historical data visualization
-- Customizable alert thresholds
-- Export functionality for data
-- Advanced filtering options in debug panel
+### Progressive Disclosure Pattern
+The UI adapts to show relevant information:
+- **No Disputes**: Simple "All markets are stable" message
+- **Active Disputes**: Detailed metrics with dispute bond, threshold %, and round
+- **Demo Mode**: Additional controls and current values display
 
----
-
-**Last Updated**: August 24, 2025
-**Component Version**: 2.0 (React Implementation)
+### Simplified Architecture Benefits
+- **Single Source of Truth**: One calculation (dispute bond / 275,000 REP)
+- **Clear Risk Communication**: Thresholds aligned with actual fork trigger
+- **Maintainable Code**: Fewer components, clearer data flow
+- **Accurate Risk Assessment**: No false alarms from over-sensitive thresholds
