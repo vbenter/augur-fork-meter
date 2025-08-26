@@ -50,6 +50,7 @@ export const GaugeDisplay = ({
 	}
 
 	const getRiskLevel = (forkThresholdPercent: number): string => {
+		if (forkThresholdPercent === 0) return 'STABLE'
 		if (forkThresholdPercent < 10) return 'LOW'
 		if (forkThresholdPercent < 25) return 'MODERATE'
 		if (forkThresholdPercent < 75) return 'HIGH'
@@ -147,7 +148,7 @@ export const GaugeDisplay = ({
 			</svg>
 
 			<div className="text-xl uppercase tracking-[0.2em] font-light text-muted-primary">
-				FORK RISK LEVEL
+				FORK PRESSURE 
 			</div>
 		</div>
 	)
