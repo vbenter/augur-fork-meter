@@ -1,12 +1,11 @@
 {
 	"name": "augur-fork-meter",
 	"type": "module",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"scripts": {
 		"dev": "astro dev",
 		"build": "astro build",
 		"preview": "astro build && wrangler dev",
-		"astro": "astro",
 		"deploy": "astro build && wrangler deploy",
 		"cf-typegen": "wrangler types",
 		"build:fork-data": "node --experimental-strip-types scripts/calculate-fork-risk.ts",

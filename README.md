@@ -38,6 +38,7 @@ npm run build
 - **Git Audit Trail**: All changes tracked in version control
 
 ### Risk Calculation
+<<<<<<< HEAD
 - **Dispute Bond Tracking**: Monitors size and escalation of dispute bonds
 - **Security Ratio**: Assesses REP market cap vs open interest ratio  
 - **Fork Threshold**: Calculates percentage of 275,000 REP threshold reached
@@ -65,6 +66,54 @@ npm run build
 | **Moderate** | Active disputes | 0.5-2% | Monitoring |
 | **High** | Large disputes | 2-5% | Concern |
 | **Critical** | Fork imminent | >5% | Alert |
+||||||| e90b0aa
+```text
+/
+=======
+- **Dispute Bond Tracking**: Monitors the size of the largest active dispute bond
+- **Fork Threshold**: Calculates percentage of 275,000 REP fork threshold reached
+- **Simple Formula**: (Largest Dispute Bond / 275,000 REP) × 100 = Risk %
+- **Real-time Assessment**: Direct calculation without complex multi-factor analysis
+
+### UI Features
+
+#### Progressive Disclosure
+- **Healthy State**: Clean display showing "System healthy - No market disputes"
+- **Active Disputes**: Detailed metrics panel with market address and key indicators
+
+#### Responsive Design
+- **Mobile**: Stacked layout with natural document flow
+- **Desktop**: CSS Grid with 3-column layout and visual separators
+
+#### Market Identification
+- Displays market address for active disputes
+- Automatic truncation with ellipsis for long addresses
+- Provides transparency about specific markets in dispute
+
+### UI Components
+- **Real Data Mode**: Displays actual fork risk from JSON file
+- **Demo Mode**: Interactive controls via debug sidebar for testing and demonstration
+- **Risk Visualization**: SVG gauge display with gradient color-coded risk levels
+- **Debug Sidebar**: Live data display with formatted metrics and demo controls
+- **Top Bar Interface**: Settings/Demo button and demo mode indicator
+- **Data Panels**: Market address, fork risk percentage, dispute bond size, dispute round
+
+## Documentation
+
+- **[Methodology](docs/methodology.md)**: Complete explanation of risk calculation methodology
+- **[Gauge UI](docs/gauge-ui.md)**: UI component documentation
+- **[Augur Whitepaper](docs/augur-whitepaper-v2.pdf)**: Core fork mechanics reference
+
+## Risk Levels
+
+| Level | Description | Fork Threshold % | Security Status |
+|-------|-------------|------------------|-----------------|
+| **Stable** | No active disputes | 0% | Healthy |
+| **Low** | Normal operation | 0.1-9.9% | Good |
+| **Moderate** | Escalating disputes | 10-24.9% | Monitoring |
+| **High** | Significant risk | 25-74.9% | Concern |
+| **Critical** | Fork imminent | ≥75% | Alert |
+>>>>>>> fork-meter-simplified
 
 ## Public RPC Endpoints (No API Keys!)
 
@@ -172,6 +221,7 @@ MIT License - see LICENSE file for details.
 - Public RPC failover system (no API keys needed)
 - Transparent, auditable architecture
 - Proper error handling (no fake data fallbacks)
+<<<<<<< HEAD
 
 **⚠️ Current Limitations:**
 - Dispute monitoring queries real events but lacks full market details
@@ -182,6 +232,10 @@ MIT License - see LICENSE file for details.
 ## Disclaimer
 
 This tool is for informational purposes only. Fork risk assessment is inherently uncertain and this system may not capture all possible risk factors. The current implementation has known limitations documented above. Users should conduct their own analysis and not rely solely on these metrics for critical decisions.
+||||||| e90b0aa
+Any static assets, like images, can be placed in the `public/` directory.
+=======
+>>>>>>> fork-meter-simplified
 
 ## 🧞 Commands
 
@@ -195,5 +249,15 @@ All commands are run from the root of the project, from a terminal:
 | `npm run preview`         | Preview your build locally, before deploying     |
 | `npm run build:fork-data` | Calculate fork risk data (TypeScript)           |
 | `npm run typecheck`       | Type-check all TypeScript files                 |
+<<<<<<< HEAD
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
+||||||| e90b0aa
+| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
+| `npm run astro -- --help` | Get help using the Astro CLI                     |
+
+## 👀 Want to learn more?
+
+Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+=======
+>>>>>>> fork-meter-simplified
