@@ -6,10 +6,15 @@ on:
     - cron: '5 * * * *'
   workflow_dispatch:
     # Allow manual trigger for testing
+    inputs:
+      custom_rpc_url:
+        description: 'Custom Ethereum RPC URL for testing'
+        required: false
+        type: string
     
   # Run on push to update data during development
   push:
-    branches: [ fork-meter-implementation ]
+    branches: [ main ]
     paths: [ 'scripts/**', 'contracts/**', 'src/**' ]
 
 jobs:
@@ -39,9 +44,9 @@ jobs:
       - name: Build fork risk data
         run: npm run build:fork-data
         env:
-          # Optional: Custom RPC can be provided via secrets
+          # Optional: Custom RPC can be provided via secrets or manual dispatch input
           # If not provided, will use public RPCs (no API key needed!)
-          ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
+          ETH_RPC_URL: ${{ secrets.ETH_RPC_URL || github.event.inputs.custom_rpc_url }}
           # TODO: When Node 23 is available, this will become:
           # run: node scripts/calculate-fork-risk.ts
       
@@ -92,7 +97,7 @@ jobs:
         run: |
           echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "**Timestamp:** $(date -u +"%Y-%m-%d %H:%M UTC")" >> $GITHUB_STEP_SUMMARY
-          echo "**Site URL:** https://[username].github.io/[repo-name]/" >> $GITHUB_STEP_SUMMARY
+          echo "**Site URL:** https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" >> $GITHUB_STEP_SUMMARY
           
           # Extract key metrics from JSON using jq (more reliable than grep)
           if [ -f public/data/fork-risk.json ]; then
@@ -101,7 +106,6 @@ jobs:
               RISK_PERCENT=$(jq -r '.riskPercentage' public/data/fork-risk.json)
               LARGEST_BOND=$(jq -r '.metrics.largestDisputeBond' public/data/fork-risk.json)
               THRESHOLD_PERCENT=$(jq -r '.metrics.forkThresholdPercent' public/data/fork-risk.json)
-              SECURITY_RATIO=$(jq -r '.metrics.securityRatio' public/data/fork-risk.json)
               ACTIVE_DISPUTES=$(jq -r '.metrics.activeDisputes' public/data/fork-risk.json)
               RPC_ENDPOINT=$(jq -r '.rpcInfo.endpoint' public/data/fork-risk.json)
               RPC_LATENCY=$(jq -r '.rpcInfo.latency' public/data/fork-risk.json)
@@ -110,7 +114,6 @@ jobs:
               echo "**Risk Percentage:** ${RISK_PERCENT}%" >> $GITHUB_STEP_SUMMARY
               echo "**Largest Dispute Bond:** ${LARGEST_BOND} REP" >> $GITHUB_STEP_SUMMARY
               echo "**Fork Threshold Progress:** ${THRESHOLD_PERCENT}% of 275,000 REP" >> $GITHUB_STEP_SUMMARY
-              echo "**Security Ratio:** ${SECURITY_RATIO}x (target: 5x, minimum: 3x)" >> $GITHUB_STEP_SUMMARY
               echo "**Active Disputes:** ${ACTIVE_DISPUTES}" >> $GITHUB_STEP_SUMMARY
               echo "**RPC Used:** ${RPC_ENDPOINT} (${RPC_LATENCY}ms)" >> $GITHUB_STEP_SUMMARY
             else

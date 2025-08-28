@@ -102,7 +102,12 @@ The system automatically connects to these free, public Ethereum RPC endpoints:
 - Zero vendor lock-in - can always switch providers
 
 ### GitHub Actions Setup
-The monitoring system automatically runs via GitHub Actions. See `.github/workflows/fork-monitor.yml` for configuration.
+The monitoring system automatically runs via GitHub Actions:
+- **Automated**: Runs every hour to update fork risk data
+- **Manual**: Can be triggered manually via GitHub web interface
+- **Testing**: Supports custom RPC URL input for testing different endpoints
+
+See `.github/workflows/fork-monitor.yml` for configuration.
 
 ## Development
 
@@ -119,7 +124,7 @@ The monitoring system automatically runs via GitHub Actions. See `.github/workfl
 │   ├── components/
 │   │   ├── App.tsx               # Root app component with provider
 │   │   ├── ForkMeter.tsx         # Main UI component with top bar
-│   │   ├── DebugSidebar.tsx      # Debug panel with live data & controls
+│   │   ├── DemoSidebar.tsx       # Demo panel with live data & controls
 │   │   ├── GaugeDisplay.tsx      # SVG gauge visualization
 │   │   └── ...                   # Other UI components
 │   ├── contexts/

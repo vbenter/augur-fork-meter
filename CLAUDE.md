@@ -21,6 +21,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run deploy` - Deploy to Cloudflare (requires wrangler setup)
 - `npm run cf-typegen` - Generate Cloudflare types
 
+**GitHub Actions**
+- Manual dispatch available in GitHub web interface for testing
+- Can provide custom RPC URL via workflow dispatch input
+- Workflow runs automatically every hour and on pushes to main branch
+
 ## Project Architecture
 
 ### Dual Runtime Architecture
