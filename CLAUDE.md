@@ -95,14 +95,8 @@ This project uses TypeScript project references to separate two distinct runtime
 
 NEVER: use emojis in documentations
 
-<<<<<<< HEAD
-# React TypeScript Preferences
-In React TSX files, use explicit function parameter types instead of React.FC
-||||||| e90b0aa
-=======
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
->>>>>>> fork-meter-simplified

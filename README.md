@@ -38,38 +38,6 @@ npm run build
 - **Git Audit Trail**: All changes tracked in version control
 
 ### Risk Calculation
-<<<<<<< HEAD
-- **Dispute Bond Tracking**: Monitors size and escalation of dispute bonds
-- **Security Ratio**: Assesses REP market cap vs open interest ratio  
-- **Fork Threshold**: Calculates percentage of 275,000 REP threshold reached
-- **Multi-factor Analysis**: Combines multiple indicators for overall risk level
-
-### UI Components
-- **Real Data Mode**: Displays actual fork risk from JSON file
-- **Demo Mode**: Interactive controls via debug sidebar for testing and demonstration
-- **Risk Visualization**: SVG gauge display with gradient color-coded risk levels
-- **Debug Sidebar**: Live data display with formatted metrics and demo controls
-- **Top Bar Interface**: Settings/Demo button and demo mode indicator
-- **Detailed Metrics**: Shows active disputes, REP staked, security ratios, RPC info
-
-## Documentation
-
-- **[Methodology](docs/methodology.md)**: Complete explanation of risk calculation methodology
-- **[Gauge UI](docs/gauge-ui.md)**: UI component documentation
-- **[Augur Whitepaper](docs/augur-whitepaper-v2.pdf)**: Core fork mechanics reference
-
-## Risk Levels
-
-| Level | Description | Fork Threshold % | Security Status |
-|-------|-------------|------------------|-----------------|
-| **Low** | Normal operation | <0.5% | Good |
-| **Moderate** | Active disputes | 0.5-2% | Monitoring |
-| **High** | Large disputes | 2-5% | Concern |
-| **Critical** | Fork imminent | >5% | Alert |
-||||||| e90b0aa
-```text
-/
-=======
 - **Dispute Bond Tracking**: Monitors the size of the largest active dispute bond
 - **Fork Threshold**: Calculates percentage of 275,000 REP fork threshold reached
 - **Simple Formula**: (Largest Dispute Bond / 275,000 REP) × 100 = Risk %
@@ -100,9 +68,10 @@ npm run build
 
 ## Documentation
 
-- **[Methodology](docs/methodology.md)**: Complete explanation of risk calculation methodology
-- **[Gauge UI](docs/gauge-ui.md)**: UI component documentation
-- **[Augur Whitepaper](docs/augur-whitepaper-v2.pdf)**: Core fork mechanics reference
+- **[Fork Risk Assessment](docs/fork-risk-assessment.md)**: Complete explanation of risk calculation methodology
+- **[Technical Architecture](docs/technical-architecture.md)**: UI component and implementation documentation
+- **[Augur Protocol Reference](docs/augur-protocol-reference.md)**: Core fork mechanics reference
+- **[Augur Whitepaper](docs/augur-whitepaper-v2.pdf)**: Complete protocol specification
 
 ## Risk Levels
 
@@ -113,7 +82,6 @@ npm run build
 | **Moderate** | Escalating disputes | 10-24.9% | Monitoring |
 | **High** | Significant risk | 25-74.9% | Concern |
 | **Critical** | Fork imminent | ≥75% | Alert |
->>>>>>> fork-meter-simplified
 
 ## Public RPC Endpoints (No API Keys!)
 
@@ -162,7 +130,9 @@ The monitoring system automatically runs via GitHub Actions. See `.github/workfl
 ├── tsconfig.app.json             # Astro app TypeScript config
 ├── tsconfig.scripts.json         # Scripts TypeScript config
 └── docs/
-    └── methodology.md            # Risk calculation methodology
+    ├── fork-risk-assessment.md   # Risk calculation methodology
+    ├── technical-architecture.md # UI implementation details
+    └── augur-protocol-reference.md # Protocol mechanics reference
 ```
 
 ### Development & TypeScript
@@ -221,21 +191,6 @@ MIT License - see LICENSE file for details.
 - Public RPC failover system (no API keys needed)
 - Transparent, auditable architecture
 - Proper error handling (no fake data fallbacks)
-<<<<<<< HEAD
-
-**⚠️ Current Limitations:**
-- Dispute monitoring queries real events but lacks full market details
-- REP price estimation ($1/REP placeholder - price oracle needed)
-- Open interest calculated from actual Cash token supply on-chain ✓
-- Limited Augur activity on mainnet
-
-## Disclaimer
-
-This tool is for informational purposes only. Fork risk assessment is inherently uncertain and this system may not capture all possible risk factors. The current implementation has known limitations documented above. Users should conduct their own analysis and not rely solely on these metrics for critical decisions.
-||||||| e90b0aa
-Any static assets, like images, can be placed in the `public/` directory.
-=======
->>>>>>> fork-meter-simplified
 
 ## 🧞 Commands
 
@@ -249,15 +204,3 @@ All commands are run from the root of the project, from a terminal:
 | `npm run preview`         | Preview your build locally, before deploying     |
 | `npm run build:fork-data` | Calculate fork risk data (TypeScript)           |
 | `npm run typecheck`       | Type-check all TypeScript files                 |
-<<<<<<< HEAD
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-||||||| e90b0aa
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
-=======
->>>>>>> fork-meter-simplified
