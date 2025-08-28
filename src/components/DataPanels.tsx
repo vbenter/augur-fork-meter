@@ -69,7 +69,7 @@ export const DataPanels = ({
 							<div className="text-sm uppercase leading-3 tracking-[0.1em] font-light text-muted-primary">
 								MARKET IN DISPUTE
 							</div>
-							<div className="text-lg uppercase font-light text-primary tracking-[0.1em] truncate mx-auto" style={{ maxWidth: 'calc(100vw - 2rem)' }}>
+							<div className="uppercase font-light text-primary tracking-[0.1em] truncate mx-auto" style={{ maxWidth: 'calc(100vw - 2rem)' }}>
 								{largestDispute.marketId}
 							</div>
 						</div>

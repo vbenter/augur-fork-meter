@@ -43,13 +43,28 @@ npm run build
 - **Simple Formula**: (Largest Dispute Bond / 275,000 REP) × 100 = Risk %
 - **Real-time Assessment**: Direct calculation without complex multi-factor analysis
 
+### UI Features
+
+#### Progressive Disclosure
+- **Healthy State**: Clean display showing "System healthy - No market disputes"
+- **Active Disputes**: Detailed metrics panel with market address and key indicators
+
+#### Responsive Design
+- **Mobile**: Stacked layout with natural document flow
+- **Desktop**: CSS Grid with 3-column layout and visual separators
+
+#### Market Identification
+- Displays market address for active disputes
+- Automatic truncation with ellipsis for long addresses
+- Provides transparency about specific markets in dispute
+
 ### UI Components
 - **Real Data Mode**: Displays actual fork risk from JSON file
 - **Demo Mode**: Interactive controls via debug sidebar for testing and demonstration
 - **Risk Visualization**: SVG gauge display with gradient color-coded risk levels
 - **Debug Sidebar**: Live data display with formatted metrics and demo controls
 - **Top Bar Interface**: Settings/Demo button and demo mode indicator
-- **Detailed Metrics**: Shows active disputes, REP staked, fork threshold percentage, RPC info
+- **Data Panels**: Market address, fork risk percentage, dispute bond size, dispute round
 
 ## Documentation
 
@@ -61,9 +76,10 @@ npm run build
 
 | Level | Description | Fork Threshold % | Security Status |
 |-------|-------------|------------------|-----------------|
-| **Low** | Normal operation | <10% | Good |
-| **Moderate** | Escalating disputes | 10-25% | Monitoring |
-| **High** | Significant risk | 25-75% | Concern |
+| **Stable** | No active disputes | 0% | Healthy |
+| **Low** | Normal operation | 0.1-9.9% | Good |
+| **Moderate** | Escalating disputes | 10-24.9% | Monitoring |
+| **High** | Significant risk | 25-74.9% | Concern |
 | **Critical** | Fork imminent | ≥75% | Alert |
 
 ## Public RPC Endpoints (No API Keys!)
@@ -173,14 +189,6 @@ MIT License - see LICENSE file for details.
 - Transparent, auditable architecture
 - Proper error handling (no fake data fallbacks)
 
-**⚠️ Current Limitations:**
-- Dispute monitoring queries real events but lacks full market details
-- Limited Augur activity on mainnet
-
-## Disclaimer
-
-This tool is for informational purposes only. Fork risk assessment is inherently uncertain and this system may not capture all possible risk factors. The current implementation has known limitations documented above. Users should conduct their own analysis and not rely solely on these metrics for critical decisions.
-
 ## 🧞 Commands
 
 All commands are run from the root of the project, from a terminal:
@@ -193,5 +201,3 @@ All commands are run from the root of the project, from a terminal:
 | `npm run preview`         | Preview your build locally, before deploying     |
 | `npm run build:fork-data` | Calculate fork risk data (TypeScript)           |
 | `npm run typecheck`       | Type-check all TypeScript files                 |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |

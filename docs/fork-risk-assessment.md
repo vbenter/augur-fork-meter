@@ -1,10 +1,10 @@
-# Augur Fork Risk Methodology
+# Fork Risk Assessment Methodology
 
 ## Overview
 
-The Augur Fork Meter provides transparent monitoring of the risk that Augur's oracle will enter a fork state. This document outlines the methodology, calculations, and data sources used to assess this risk.
+The Augur Fork Meter provides transparent monitoring of the risk that Augur's oracle will enter a fork state. This document outlines the methodology, calculations, data sources, and infrastructure used to assess this risk.
 
-## Fork Mechanics Background
+## Fork Trigger Mechanics
 
 Based on the Augur v2 whitepaper, forks are triggered when:
 

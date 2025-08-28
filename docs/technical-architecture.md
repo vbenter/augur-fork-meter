@@ -1,6 +1,6 @@
-# Fork Meter UI Components
+# Technical Architecture
 
-This document describes the React/TypeScript implementation of the Augur Fork Meter's simplified user interface components.
+This document describes the React/TypeScript implementation of the Augur Fork Meter application, including component architecture, state management, and UI patterns.
 
 ## Architecture Overview
 
@@ -230,12 +230,6 @@ if (forkThresholdPercent < 25) return 'MODERATE'
 if (forkThresholdPercent < 75) return 'HIGH'
 return 'CRITICAL'
 ```
-
-### Risk Level Thresholds
-- **LOW**: <10% of fork threshold (normal operation)
-- **MODERATE**: 10-25% (elevated dispute activity)
-- **HIGH**: 25-75% (significant disputes requiring monitoring)
-- **CRITICAL**: ≥75% (fork trigger imminent)
 
 ### Number Formatting
 - **Large Numbers**: `toLocaleString()` for comma separators
