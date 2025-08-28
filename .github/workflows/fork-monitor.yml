@@ -63,52 +63,32 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # Store current branch
-          CURRENT_BRANCH=$(git branch --show-current)
+          # Create a completely separate directory for gh-pages deployment
+          cd /tmp
+          rm -rf gh-pages-deploy
+          mkdir gh-pages-deploy
+          cd gh-pages-deploy
           
-          # Create temporary directory and copy dist contents BEFORE switching branches
-          mkdir -p /tmp/dist-backup
-          echo "Contents of dist directory:"
-          ls -la dist/
-          echo "Copying dist contents to backup..."
-          cp -r dist/* /tmp/dist-backup/
-          echo "Contents of backup directory:"
-          ls -la /tmp/dist-backup/
+          # Initialize new git repo
+          git init
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           
-          # Check if gh-pages exists
-          if git ls-remote --heads origin gh-pages | grep -q gh-pages; then
-            echo "gh-pages branch exists, fetching..."
-            git fetch origin gh-pages
-            git checkout gh-pages
-            # Remove old files but keep .git
-            git rm -rf . || true
-          else
-            echo "Creating orphan gh-pages branch..."
-            git checkout --orphan gh-pages
-            git rm -rf . || true
-          fi
-          
-          # Ensure directory is completely clean
-          echo "Current directory after git operations:"
-          ls -la
-          
-          # Copy built files from backup
-          cp -r /tmp/dist-backup/* .
-          
-          # Verify what was copied
-          echo "Directory contents after copying from backup:"
-          ls -la
+          # Copy ONLY the built files
+          cp -r ${{ github.workspace }}/dist/* .
           
           # Add .nojekyll to bypass Jekyll processing
           touch .nojekyll
           
-          # Commit and push
-          git add .
-          git commit -m "Deploy fork meter: $(date -u +"%Y-%m-%d %H:%M UTC")" || echo "No changes to commit"
-          git push -f origin gh-pages
+          # Verify what we're deploying
+          echo "Files being deployed:"
+          ls -la
           
-          # Return to original branch
-          git checkout $CURRENT_BRANCH
+          # Create initial commit
+          git add .
+          git commit -m "Deploy fork meter: $(date -u +"%Y-%m-%d %H:%M UTC")"
+          
+          # Force push to gh-pages branch
+          git push -f origin HEAD:gh-pages
       
       - name: Create deployment summary
         run: |
