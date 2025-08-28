@@ -18,7 +18,7 @@ export default defineConfig({
 				// Static build for GitHub Pages
 				output: 'static',
 				site: 'https://jubalm.github.io',
-				base: '/fork-meter',
+				base: '/augur-fork-meter',
 			}
 		: {
 				// Cloudflare adapter for local development and production deploys
