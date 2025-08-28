@@ -47,7 +47,7 @@ export const DemoProvider = ({ children }: DemoProviderProps): React.JSX.Element
 	const resetToLive = useCallback(async () => {
 		try {
 			// Fetch fresh live data from JSON file
-			const response = await fetch('/data/fork-risk.json')
+			const response = await fetch(`${import.meta.env.BASE_URL}data/fork-risk.json`)
 			if (!response.ok) {
 				throw new Error(`Failed to load live data: ${response.status}`)
 			}
