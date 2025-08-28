@@ -16,10 +16,6 @@ export interface ForkRiskData {
 	metrics: {
 		largestDisputeBond: number
 		forkThresholdPercent: number
-<<<<<<< HEAD
-		repMarketCap: number
-		openInterest: number
-		securityRatio: number
 		activeDisputes: number
 		disputeDetails: Array<{
 			marketId: string
@@ -39,34 +35,6 @@ export interface ForkRiskData {
 	calculation: {
 		method: string
 		forkThreshold: number
-		securityMultiplier: {
-			current: number
-			minimum: number
-			target: number
-		}
-||||||| e90b0aa
-  level: 'Low' | 'Medium' | 'High';
-=======
-		activeDisputes: number
-		disputeDetails: Array<{
-			marketId: string
-			title: string
-			disputeBondSize: number
-			disputeRound: number
-			daysRemaining: number
-		}>
-	}
-	nextUpdate: string
-	rpcInfo?: {
-		endpoint: string | null
-		latency: number | null
-		fallbacksAttempted: number
-		isPublicRpc: boolean
-	}
-	calculation: {
-		method: string
-		forkThreshold: number
->>>>>>> fork-meter-simplified
 	}
 	error?: string
 }

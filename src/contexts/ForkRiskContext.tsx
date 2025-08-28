@@ -41,10 +41,6 @@ export const ForkRiskProvider = ({
 		metrics: {
 			largestDisputeBond: 0,
 			forkThresholdPercent: 0,
-<<<<<<< HEAD
-			repMarketCap: 11000000,
-			openInterest: 50000000,
-			securityRatio: 3.3,
 			activeDisputes: 0,
 			disputeDetails: [],
 		},
@@ -52,76 +48,6 @@ export const ForkRiskProvider = ({
 		calculation: {
 			method: 'Static fallback',
 			forkThreshold: 275000,
-			securityMultiplier: {
-				current: 3.3,
-				minimum: 3,
-				target: 5,
-			},
-		},
-	}))
-
-	const [forkRiskData, setForkRiskData] = useState<ForkRiskData | null>(null)
-	const [isLoading, setIsLoading] = useState(false) // Start as false to prevent hydration mismatch
-	const [error, setError] = useState<string>()
-	const [hasHydrated, setHasHydrated] = useState(false)
-
-	const loadForkRiskData = useCallback(async () => {
-		try {
-			setIsLoading(true)
-			setError(undefined)
-
-			// Try to load from static JSON file first
-			const response = await fetch('/data/fork-risk.json')
-
-			if (!response.ok) {
-				throw new Error(`Failed to load fork risk data: ${response.status}`)
-			}
-
-			const data: ForkRiskData = await response.json()
-			setForkRiskData(data)
-		} catch (err) {
-			console.error('Error loading fork risk data:', err)
-			setError(err instanceof Error ? err.message : 'Failed to load data')
-
-			// Fallback to default data if file doesn't exist
-			setForkRiskData(defaultData)
-		} finally {
-			setIsLoading(false)
-		}
-	}, [defaultData])
-
-	// Handle hydration
-	useEffect(() => {
-		setHasHydrated(true)
-	}, [])
-
-	// Load data on mount and set up refresh interval
-	useEffect(() => {
-		if (hasHydrated) {
-			loadForkRiskData()
-
-			// Refresh at the specified interval (data updates hourly, so 5min default is reasonable)
-			const interval = setInterval(loadForkRiskData, updateInterval)
-			return () => clearInterval(interval)
-		}
-	}, [loadForkRiskData, updateInterval, hasHydrated, defaultData])
-
-	const convertToGaugeData = (data: ForkRiskData): GaugeData => ({
-		percentage: data.riskPercentage,
-||||||| e90b0aa
-=======
-			activeDisputes: 0,
-			disputeDetails: [],
-		},
-		nextUpdate: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-		calculation: {
-			method: 'Static fallback',
-			forkThreshold: 275000,
-			securityMultiplier: {
-				current: 3.3,
-				minimum: 3,
-				target: 5,
-			},
 		},
 	}))
 
@@ -173,7 +99,6 @@ export const ForkRiskProvider = ({
 
 	const convertToGaugeData = (data: ForkRiskData): GaugeData => ({
 		percentage: data.riskPercentage, // Pass actual percentage, let GaugeDisplay handle visual scaling
->>>>>>> fork-meter-simplified
 		repStaked: data.metrics.largestDisputeBond,
 		activeDisputes: data.metrics.activeDisputes,
 	})

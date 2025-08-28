@@ -4,16 +4,5 @@
       "WebSearch"
     ]
   },
-<<<<<<< HEAD
-  "outputStyle": "default"
-||||||| e90b0aa
-      "mcp__playwright"
-    ],
-    "deny": [],
-    "ask": []
-  }
-}
-=======
   "outputStyle": "Explanatory"
->>>>>>> fork-meter-simplified
 }
