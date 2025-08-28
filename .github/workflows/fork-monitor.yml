@@ -79,8 +79,8 @@ jobs:
             git rm -rf . || true
           fi
           
-          # Copy built files from dist
-          cp -r ${{ github.workspace }}/dist/* .
+          # Copy built files from dist only
+          cp -r dist/* .
           
           # Add .nojekyll to bypass Jekyll processing
           touch .nojekyll
