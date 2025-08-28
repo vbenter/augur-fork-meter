@@ -66,6 +66,10 @@ jobs:
           # Store current branch
           CURRENT_BRANCH=$(git branch --show-current)
           
+          # Create temporary directory and copy dist contents BEFORE switching branches
+          mkdir -p /tmp/dist-backup
+          cp -r dist/* /tmp/dist-backup/
+          
           # Check if gh-pages exists
           if git ls-remote --heads origin gh-pages | grep -q gh-pages; then
             echo "gh-pages branch exists, fetching..."
@@ -79,8 +83,8 @@ jobs:
             git rm -rf . || true
           fi
           
-          # Copy built files from dist only
-          cp -r dist/* .
+          # Copy built files from backup
+          cp -r /tmp/dist-backup/* .
           
           # Add .nojekyll to bypass Jekyll processing
           touch .nojekyll
