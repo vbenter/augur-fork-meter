@@ -62,7 +62,9 @@ export const ForkRiskProvider = ({
 			setError(undefined)
 
 			// Try to load from static JSON file first
-			const response = await fetch(`${import.meta.env.BASE_URL}data/fork-risk.json`)
+			const baseUrl = import.meta.env.BASE_URL || '/'
+			const dataUrl = baseUrl.endsWith('/') ? `${baseUrl}data/fork-risk.json` : `${baseUrl}/data/fork-risk.json`
+			const response = await fetch(dataUrl)
 
 			if (!response.ok) {
 				throw new Error(`Failed to load fork risk data: ${response.status}`)
