@@ -68,7 +68,12 @@ jobs:
           
           # Create temporary directory and copy dist contents BEFORE switching branches
           mkdir -p /tmp/dist-backup
+          echo "Contents of dist directory:"
+          ls -la dist/
+          echo "Copying dist contents to backup..."
           cp -r dist/* /tmp/dist-backup/
+          echo "Contents of backup directory:"
+          ls -la /tmp/dist-backup/
           
           # Check if gh-pages exists
           if git ls-remote --heads origin gh-pages | grep -q gh-pages; then
