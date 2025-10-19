@@ -8,7 +8,7 @@
 		"preview": "astro build && wrangler dev",
 		"deploy": "astro build && wrangler deploy",
 		"cf-typegen": "wrangler types",
-		"build:fork-data": "node --experimental-strip-types scripts/calculate-fork-risk.ts",
+		"build:fork-data": "tsx scripts/calculate-fork-risk.ts",
 		"typecheck": "tsc --build",
 		"lint": "npx @biomejs/biome lint"
 	},
@@ -28,6 +28,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^24.3.0",
+		"tsx": "^4.19.2",
 		"wrangler": "^4.31.0"
 	}
 }

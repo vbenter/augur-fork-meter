@@ -60,7 +60,7 @@ interface ForkRiskData {
 type RiskLevel = 'low' | 'moderate' | 'high' | 'critical'
 
 // Configuration
-const FORK_THRESHOLD_REP = 275000 // 2.5% of 11 million REP
+const FORK_THRESHOLD_REP = 201715
 
 // Public RPC endpoints (no API keys required!)
 const PUBLIC_RPC_ENDPOINTS = [
@@ -97,7 +97,7 @@ async function getWorkingProvider(): Promise<RpcConnection> {
 			await provider.getBlockNumber() // Test connection
 			const latency = Date.now() - startTime
 			console.log(`✓ Connected to: ${rpc} (${latency}ms)`)
-			
+
 			return {
 				provider,
 				endpoint: rpc,
@@ -151,7 +151,7 @@ async function loadContracts(provider: ethers.JsonRpcProvider): Promise<Record<s
 	console.log(`  Augur: ${abis.augur.address}`)
 	console.log(`  REPv2: ${abis.repV2Token.address}`)
 	console.log(`  Cash: ${abis.cash.address}`)
-	
+
 	return contracts
 }
 
@@ -279,86 +279,86 @@ async function getActiveDisputes(provider: ethers.JsonRpcProvider, contracts: Re
 
 		for (const event of events) {
 			try {
-					// Each event should have args: [universe, market, disputeCrowdsourcer, payoutNumerators, size, invalid]
-					if (
-						!event.args ||
-						!Array.isArray(event.args) ||
-						event.args.length < 6
-					)
-						continue
+				// Each event should have args: [universe, market, disputeCrowdsourcer, payoutNumerators, size, invalid]
+				if (
+					!event.args ||
+					!Array.isArray(event.args) ||
+					event.args.length < 6
+				)
+					continue
 
-					const [
-						_universe,
+				const [
+					_universe,
+					marketAddress,
+					_disputeCrowdsourcerAddress,
+					_payoutNumerators,
+					bondSizeWei,
+					isInvalid,
+				] = event.args
+
+				// Convert bond size from wei to REP tokens
+				const bondSizeRep = Number(ethers.formatEther(bondSizeWei))
+
+				// Try to get market details (this might fail for old/finalized markets)
+				const marketTitle = `Market ${marketAddress.substring(0, 10)}...`
+				let disputeRound = 1
+				const daysRemaining = 7
+
+				try {
+					// Create market contract instance to get more details
+					const marketContract = new ethers.Contract(
 						marketAddress,
-						_disputeCrowdsourcerAddress,
-						_payoutNumerators,
-						bondSizeWei,
-						isInvalid,
-					] = event.args
-
-					// Convert bond size from wei to REP tokens
-					const bondSizeRep = Number(ethers.formatEther(bondSizeWei))
-
-					// Try to get market details (this might fail for old/finalized markets)
-					const marketTitle = `Market ${marketAddress.substring(0, 10)}...`
-					let disputeRound = 1
-					const daysRemaining = 7
-
-					try {
-						// Create market contract instance to get more details
-						const marketContract = new ethers.Contract(
-							marketAddress,
-							[
-								{
-									constant: true,
-									inputs: [],
-									name: 'getNumParticipants',
-									outputs: [{ name: '', type: 'uint256' }],
-									type: 'function',
-								},
-								{
-									constant: true,
-									inputs: [],
-									name: 'isFinalized',
-									outputs: [{ name: '', type: 'bool' }],
-									type: 'function',
-								},
-							],
-							provider,
-						)
-
-						// Skip if market is finalized
-						const isFinalized = await marketContract.isFinalized()
-						if (isFinalized) continue
-
-						// Estimate dispute round based on bond size
-						// Initial bond is ~$12.5k, doubles each round
-						const initialBondRep = 625 // Approximate initial bond in REP
-						disputeRound = Math.max(
-							1,
-							Math.ceil(Math.log2(bondSizeRep / initialBondRep)),
-						)
-					} catch (_marketError) {
-						// If we can't get market details, use defaults
-						console.warn(`Could not get details for market ${marketAddress}`)
-					}
-
-					disputes.push({
-						marketId: marketAddress,
-						title: marketTitle,
-						disputeBondSize: bondSizeRep,
-						disputeRound,
-						daysRemaining,
-					})
-				} catch (eventError) {
-					console.warn(
-						'Error processing dispute event:',
-						eventError instanceof Error
-							? eventError.message
-							: String(eventError),
+						[
+							{
+								constant: true,
+								inputs: [],
+								name: 'getNumParticipants',
+								outputs: [{ name: '', type: 'uint256' }],
+								type: 'function',
+							},
+							{
+								constant: true,
+								inputs: [],
+								name: 'isFinalized',
+								outputs: [{ name: '', type: 'bool' }],
+								type: 'function',
+							},
+						],
+						provider,
 					)
+
+					// Skip if market is finalized
+					const isFinalized = await marketContract.isFinalized()
+					if (isFinalized) continue
+
+					// Estimate dispute round based on bond size
+					// Initial bond is ~$12.5k, doubles each round
+					const initialBondRep = 625 // Approximate initial bond in REP
+					disputeRound = Math.max(
+						1,
+						Math.ceil(Math.log2(bondSizeRep / initialBondRep)),
+					)
+				} catch (_marketError) {
+					// If we can't get market details, use defaults
+					console.warn(`Could not get details for market ${marketAddress}`)
 				}
+
+				disputes.push({
+					marketId: marketAddress,
+					title: marketTitle,
+					disputeBondSize: bondSizeRep,
+					disputeRound,
+					daysRemaining,
+				})
+			} catch (eventError) {
+				console.warn(
+					'Error processing dispute event:',
+					eventError instanceof Error
+						? eventError.message
+						: String(eventError),
+				)
 			}
+		}
 
 		// Sort by bond size (largest first) and return top 10
 		const sortedDisputes = disputes.sort(
@@ -391,73 +391,73 @@ function determineRiskLevel(forkThresholdPercent: number): RiskLevel {
 }
 
 function getForkingResult(timestamp: string, blockNumber: number, connection: RpcConnection): ForkRiskData {
-		return {
-			timestamp,
-			blockNumber,
-			riskLevel: 'critical',
-			riskPercentage: 100,
-			metrics: {
-				largestDisputeBond: FORK_THRESHOLD_REP, // Fork threshold was reached
-				forkThresholdPercent: 100,
-				activeDisputes: 0,
-				disputeDetails: [
-					{
-						marketId: 'FORKING',
-						title: 'Universe is currently forking',
-						disputeBondSize: FORK_THRESHOLD_REP,
-						disputeRound: 99,
-						daysRemaining: 0,
-					},
-				],
-			},
-			nextUpdate: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-			rpcInfo: {
-				endpoint: connection.endpoint,
-				latency: connection.latency,
-				fallbacksAttempted: connection.fallbacksAttempted,
-			},
-			calculation: {
-				method: 'Fork Detected',
-				forkThreshold: FORK_THRESHOLD_REP,
-			},
-		}
+	return {
+		timestamp,
+		blockNumber,
+		riskLevel: 'critical',
+		riskPercentage: 100,
+		metrics: {
+			largestDisputeBond: FORK_THRESHOLD_REP, // Fork threshold was reached
+			forkThresholdPercent: 100,
+			activeDisputes: 0,
+			disputeDetails: [
+				{
+					marketId: 'FORKING',
+					title: 'Universe is currently forking',
+					disputeBondSize: FORK_THRESHOLD_REP,
+					disputeRound: 99,
+					daysRemaining: 0,
+				},
+			],
+		},
+		nextUpdate: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+		rpcInfo: {
+			endpoint: connection.endpoint,
+			latency: connection.latency,
+			fallbacksAttempted: connection.fallbacksAttempted,
+		},
+		calculation: {
+			method: 'Fork Detected',
+			forkThreshold: FORK_THRESHOLD_REP,
+		},
 	}
+}
 
 function getErrorResult(errorMessage: string): ForkRiskData {
-		return {
-			timestamp: new Date().toISOString(),
-			riskLevel: 'unknown',
-			riskPercentage: 0,
-			error: errorMessage,
-			metrics: {
-				largestDisputeBond: 0,
-				forkThresholdPercent: 0,
-				activeDisputes: 0,
-				disputeDetails: [],
-			},
-			nextUpdate: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-			rpcInfo: {
-				endpoint: null,
-				latency: null,
-				fallbacksAttempted: 0,
-			},
-			calculation: {
-				method: 'Error',
-				forkThreshold: FORK_THRESHOLD_REP,
-			},
-		}
+	return {
+		timestamp: new Date().toISOString(),
+		riskLevel: 'unknown',
+		riskPercentage: 0,
+		error: errorMessage,
+		metrics: {
+			largestDisputeBond: 0,
+			forkThresholdPercent: 0,
+			activeDisputes: 0,
+			disputeDetails: [],
+		},
+		nextUpdate: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+		rpcInfo: {
+			endpoint: null,
+			latency: null,
+			fallbacksAttempted: 0,
+		},
+		calculation: {
+			method: 'Error',
+			forkThreshold: FORK_THRESHOLD_REP,
+		},
 	}
+}
 
 async function saveResults(results: ForkRiskData): Promise<void> {
-		const outputPath = path.join(__dirname, '../public/data/fork-risk.json')
+	const outputPath = path.join(__dirname, '../public/data/fork-risk.json')
 
-		// Ensure data directory exists
-		await fs.mkdir(path.dirname(outputPath), { recursive: true })
+	// Ensure data directory exists
+	await fs.mkdir(path.dirname(outputPath), { recursive: true })
 
-		// Write results with pretty formatting
-		await fs.writeFile(outputPath, JSON.stringify(results, null, 2))
+	// Write results with pretty formatting
+	await fs.writeFile(outputPath, JSON.stringify(results, null, 2))
 
-		console.log(`Results saved to ${outputPath}`)
+	console.log(`Results saved to ${outputPath}`)
 }
 
 // Main execution
